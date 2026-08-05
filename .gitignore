@@ -1,0 +1,40 @@
+node_modules/
+.env
+.env.local
+
+# 运行时数据文件：核心数据入库（GitHub Actions 云端持久化，run-daily 后提交回仓库）
+# data/ratio_rotation_data.json 等核心数据文件不再忽略（删除下行注释即重新忽略）
+# 分析缓存/备份/日志不入库
+data/backtest_result.json
+data/backups/
+data/logs/
+data/chart_*.html
+data/*.xlsx
+
+# 前端构建产物
+public/frontend_data.json
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+tmp_*
+_tmp_*
+*.tmp
+
+# 备份
+backup/
+trading.db
+
+# 截图
+screenshots/
+
+# 分析缓存
+analysis/cache/
+analysis/*.xlsx
+analysis/*.zip
+analysis/test.csv
+analysis/test.dat
+analysis/test.txt
+_tmp_*.xlsx

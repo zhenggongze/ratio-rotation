@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>创业板/红利比值轮动 — 交易决策辅助系统</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #1e3c72;
+      --primary-light: #2a5298;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --text-light: #7f8c8d;
+      --text-lighter: #95a5a6;
+      --border: #ecf0f1;
+      --pos: #e74c3c;  /* A股红涨 */
+      --neg: #27ae60;  /* A股绿跌 */
+      --blue: #3498db;
+      --yellow: #f39c12;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      --shadow-hover: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      /* 移动端正文至少16px，防止iOS自动缩放 */
+      font-size: 16px;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ===== 移动端断点 375/414/428 ===== */
+    @media (min-width: 768px) {
+      .container { padding: 20px; }
+    }
+
+    /* ===== 头部 ===== */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 24px 20px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(30, 60, 114, 0.2);
+    }
+    @media (min-width: 768px) {
+      .header { padding: 30px; margin-bottom: 20px; }
+    }
+    .header h1 {
+      font-size: 20px;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    @media (min-width: 768px) {
+      .header h1 { font-size: 24px; }
+    }
+    .header p {
+      opacity: 0.9;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .header .designed-by {
+      margin-top: 10px;
+      opacity: 0.75;
+      font-size: 12px;
+      text-align: right;
+    }
+    @media (min-width: 768px) {
+      .header p { font-size: 14px; }
+    }
+
+    /* ===== 指标卡片 ===== */
+    /* iPhone 14 Plus (428px) 及以上用 3 列，避免 5 个卡片出现 2+2+1 */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (min-width: 414px) {
+      .metrics-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    }
+    @media (min-width: 768px) {
+      .metrics-grid { grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+    }
+    .metric-card {
+      background: var(--card);
+      padding: 14px 10px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .metric-card .label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      white-space: nowrap;
+    }
+    .metric-card .value {
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    @media (min-width: 414px) {
+      .metric-card { padding: 16px 12px; }
+      .metric-card .value { font-size: 22px; }
+    }
+    @media (min-width: 768px) {
+      .metric-card { padding: 20px; }
+      .metric-card .value { font-size: 26px; }
+    }
+    .metric-card .value.positive { color: var(--pos); }
+    .metric-card .value.negative { color: var(--neg); }
+    .metric-card .sub {
+      font-size: 11px;
+      color: var(--text-lighter);
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    /* ===== 区块 ===== */
+    .section {
+      background: var(--card);
+      padding: 20px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    @media (min-width: 768px) {
+      .section { padding: 25px; margin-bottom: 20px; }
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @media (min-width: 768px) {
+      .section-title { font-size: 18px; }
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      background: var(--primary);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-lighter);
+      font-weight: 400;
+      margin-left: auto;
+    }
+
+    /* ===== 当前状态：分区布局 ===== */
+    .status-main {
+      background: linear-gradient(135deg, #f8f9fb 0%, #eef2f7 100%);
+      border-radius: var(--radius-sm);
+      padding: 20px 16px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .status-ratio-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .status-ratio-item {
+      text-align: center;
+      min-width: 80px;
+    }
+    .status-ratio-item .label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .status-ratio-item .value {
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    @media (min-width: 768px) {
+      .status-ratio-item .value { font-size: 24px; }
+    }
+
+    /* 比值大数字展示 */
+    .ratio-display {
+      margin-bottom: 16px;
+    }
+    .ratio-display .ratio-value {
+      font-size: 36px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -1px;
+    }
+    @media (min-width: 768px) {
+      .ratio-display .ratio-value { font-size: 48px; }
+    }
+    .ratio-display .ratio-label {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .ratio-display .ratio-zone {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .zone-buy { background: #fdf2f2; color: var(--pos); border: 1px solid #f5c6c6; }
+    .zone-sell { background: #f0faf3; color: var(--neg); border: 1px solid #c6e8d0; }
+    .zone-hold { background: #f0f4f8; color: var(--text-light); border: 1px solid #d4dde6; }
+
+    /* 仓位条 */
+    .position-bar-wrap {
+      margin: 16px 0;
+    }
+    .position-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+    .position-bar {
+      height: 28px;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      background: var(--border);
+    }
+    .position-bar .cyb {
+      background: linear-gradient(90deg, var(--pos) 0%, #c0392b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      transition: width 0.4s ease;
+      min-width: 0;
+    }
+    .position-bar .hli {
+      background: linear-gradient(90deg, var(--neg) 0%, #1e8449 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      transition: width 0.4s ease;
+      min-width: 0;
+    }
+
+    /* 下步操作 */
+    .next-action {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      border-left: 4px solid var(--blue);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .next-action.alert { border-left-color: var(--pos); background: #fff5f5; }
+    .next-action.success { border-left-color: var(--neg); background: #f0faf3; }
+    .next-action .label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .next-action .value {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* 详细信息网格 */
+    .status-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (min-width: 768px) {
+      .status-detail-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    }
+    .status-detail-item {
+      background: #f8f9fb;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--border);
+    }
+    .status-detail-item .label {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .status-detail-item .value {
+      font-size: 15px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    /* ===== 图表 ===== */
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    @media (min-width: 768px) {
+      .chart-container { height: 400px; }
+    }
+
+    /* ===== 表格 ===== */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 500px;
+    }
+    @media (min-width: 768px) {
+      table { font-size: 14px; min-width: auto; }
+    }
+    thead { background: var(--primary); color: white; }
+    th {
+      padding: 10px 6px;
+      text-align: center;
+      font-weight: 500;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
+    @media (min-width: 768px) {
+      th { padding: 10px 8px; }
+    }
+    td {
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    @media (min-width: 768px) {
+      td { padding: 8px; }
+    }
+    tbody tr:nth-child(even) { background: #f8f9fb; }
+    tbody tr:hover { background: #e8f0fe; }
+    .pos { color: var(--pos); font-weight: 600; }
+    .neg { color: var(--neg); font-weight: 600; }
+    .action-buy { color: var(--pos); font-weight: 600; }
+    .action-sell { color: var(--neg); font-weight: 600; }
+    .action-hold { color: var(--text-lighter); }
+
+    /* ===== 档位表 ===== */
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .tiers-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+    }
+    .tier-table th, .tier-table td { font-size: 12px; padding: 6px 4px; }
+    .tier-table { min-width: 280px; }
+    @media (min-width: 768px) {
+      .tier-table th, .tier-table td { font-size: 13px; padding: 6px 8px; }
+      .tier-table { min-width: auto; }
+    }
+    .tier-subtitle {
+      font-size: 14px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+    .tier-subtitle.buy { color: var(--pos); background: #fdf2f2; }
+    .tier-subtitle.sell { color: var(--neg); background: #f0faf3; }
+
+    /* ===== 加载 ===== */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-lighter);
+      font-size: 16px;
+    }
+    .loading::after {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 32px;
+      margin: 15px auto;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== 页脚 ===== */
+    .footer {
+      text-align: center;
+      color: var(--text-lighter);
+      font-size: 12px;
+      padding: 20px 16px;
+      line-height: 1.8;
+    }
+
+    /* ===== 历年收益移动端卡片式 ===== */
+    @media (max-width: 767px) {
+      .yearly-mobile { display: block; }
+      .yearly-desktop { display: none; }
+      .year-card {
+        background: #f8f9fb;
+        border-radius: var(--radius-sm);
+        padding: 14px;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--border);
+      }
+      .year-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .year-card-year { font-size: 18px; font-weight: 700; color: var(--primary); }
+      .year-card-ret { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .year-card-meta {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        font-size: 12px;
+        color: var(--text-light);
+      }
+      .year-card-meta-item { text-align: center; }
+      .year-card-meta-item .v { font-weight: 600; color: var(--text); font-size: 13px; }
+      .year-card-summary {
+        font-size: 12px;
+        color: var(--text-light);
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+        text-align: left;
+      }
+    }
+    @media (min-width: 768px) {
+      .yearly-mobile { display: none; }
+      .yearly-desktop { display: block; }
+    }
+
+    /* ===== 页签 ===== */
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+    .tab { padding: 12px 24px; background: transparent; border: none; color: var(--text-light); font-size: 15px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+    .tab.active { color: #e74c3c; border-bottom-color: #e74c3c; font-weight: 600; }
+    .tab:hover { color: var(--text); }
+
+    /* ===== 比值历史位置标尺 ===== */
+    .ratio-ruler-wrap { margin: 16px 0; padding: 14px 16px; background: var(--card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .ratio-ruler-title { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-light); margin-bottom: 10px; }
+    .ratio-ruler { position: relative; height: 28px; border-radius: 14px; overflow: visible; background: #f0f0f0; }
+    .ratio-ruler-inner { position: relative; height: 28px; border-radius: 14px; overflow: hidden; background: #f0f0f0; }
+    .ruler-zone, .ruler-zone-hover { position: absolute; top: 0; height: 100%; cursor: pointer; }
+    .ruler-zone::after, .ruler-zone-hover::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: rgba(30, 60, 114, 0.95); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; line-height: 1.4; }
+    .ruler-zone:hover::after, .ruler-zone-hover:hover::after { opacity: 1; }
+    .ruler-buy-deep { background: rgba(231, 76, 60, 0.55); }
+    .ruler-buy { background: rgba(231, 76, 60, 0.25); }
+    .ruler-hold { background: rgba(127, 140, 141, 0.2); }
+    .ruler-sell { background: rgba(39, 174, 96, 0.25); }
+    .ruler-sell-deep { background: rgba(39, 174, 96, 0.55); }
+    .ruler-marker { position: absolute; top: -4px; height: 36px; width: 3px; background: #1e3c72; border-radius: 2px; box-shadow: 0 0 6px rgba(30,60,114,0.6); transform: translateX(-50%); cursor: pointer; z-index: 5; }
+    .ruler-marker::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #1e3c72; border-bottom: 0; }
+    .ruler-marker::after { content: attr(data-tip); position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(30, 60, 114, 0.95); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 11; line-height: 1.4; }
+    .ruler-marker:hover::after { opacity: 1; }
+    .ratio-ruler-legend { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--text-light); flex-wrap: wrap; }
+    .legend-item { display: inline-flex; align-items: center; gap: 4px; }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .legend-buy-deep { background: rgba(231, 76, 60, 0.75); }
+    .legend-buy { background: rgba(231, 76, 60, 0.5); }
+    .legend-hold { background: rgba(127, 140, 141, 0.5); }
+    .legend-sell { background: rgba(39, 174, 96, 0.5); }
+    .legend-sell-deep { background: rgba(39, 174, 96, 0.75); }
+    .ratio-ruler-note { margin-top: 10px; padding: 10px 12px; background: #f8f9fb; border-left: 3px solid var(--blue); border-radius: 4px; font-size: 12px; color: var(--text-light); line-height: 1.6; }
+    .ratio-ruler-note strong { color: var(--text); font-weight: 600; }
+
+    /* ===== 仓位卡片 ===== */
+    .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+    .pos-card { padding: 12px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; transition: all 0.2s; }
+    .pos-card.active { border-color: var(--blue); box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1); }
+    .pos-card-label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; }
+    .pos-card-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
+    .pos-card-sub { font-size: 11px; color: var(--text-lighter); margin-top: 2px; }
+    .pos-red { color: var(--pos); }
+    .pos-green { color: var(--neg); }
+    .pos-zero { color: var(--text-lighter); }
+    @media (max-width: 480px) { .position-cards { gap: 6px; } .pos-card { padding: 10px 6px; } .pos-card-value { font-size: 18px; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1 id="headerTitle">创业板/红利比值轮动</h1>
+      <p id="headerDesc">创业板指(399006) ÷ 中证红利(000922) 比值，买入区≤0.35分批加仓，卖出区≥0.6分批减仓，滞回带不操作</p>
+      <div class="designed-by">designed by 郑公泽</div>
+    </div>
+
+    <!-- 页签切换 -->
+    <div class="tabs">
+      <button class="tab active" data-tab="cyb" onclick="switchTab('cyb')">创业板/红利</button>
+      <button class="tab" data-tab="kcb" onclick="switchTab('kcb')">科创50/红利</button>
+    </div>
+
+    <!-- 加载状态 -->
+    <div id="loading" class="loading">正在加载策略数据...</div>
+
+    <!-- 内容区 -->
+    <div id="content" style="display:none;">
+
+      <!-- 自使用以来指标 -->
+      <div class="metrics-grid" id="metricsGrid"></div>
+
+      <!-- 当前状态 -->
+      <div class="section">
+        <div class="section-title">
+          当前状态
+          <span class="section-subtitle" id="statusDate"></span>
+        </div>
+        <div id="statusContent"></div>
+      </div>
+
+      <!-- 历年收益 -->
+      <div class="section">
+        <div class="section-title">
+          历年收益表
+          <span class="section-subtitle">回测参考 2014-2026</span>
+        </div>
+        <!-- 桌面端表格 -->
+        <div class="yearly-desktop table-wrap">
+          <table id="yearlyTable"></table>
+        </div>
+        <!-- 移动端卡片 -->
+        <div class="yearly-mobile" id="yearlyMobile"></div>
+      </div>
+
+      <!-- 档位操作表 -->
+      <div class="section">
+        <div class="section-title">档位操作表（20档）</div>
+        <div class="tiers-grid">
+          <div>
+            <div class="tier-subtitle buy" id="buyTierTitle">买入档位（比值≤0.35）</div>
+            <div class="table-wrap">
+              <table class="tier-table" id="buyTiersTable"></table>
+            </div>
+          </div>
+          <div>
+            <div class="tier-subtitle sell" id="sellTierTitle">卖出档位（比值≥0.6）</div>
+            <div class="table-wrap">
+              <table class="tier-table" id="sellTiersTable"></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近调仓 -->
+      <div class="section">
+        <div class="section-title">最近调仓记录</div>
+        <div class="table-wrap">
+          <table id="tradesTable"></table>
+        </div>
+      </div>
+
+      <!-- 最近日别 -->
+      <div class="section">
+        <div class="section-title">最近 60 个交易日</div>
+        <div class="table-wrap">
+          <table id="dailyTable"></table>
+        </div>
+      </div>
+
+      <!-- 走势图 -->
+      <div class="section">
+        <div class="section-title" id="chartTitle">创业板/红利走势与仓位对应图（月度）</div>
+        <div class="chart-container">
+          <canvas id="chart"></canvas>
+        </div>
+      </div>
+
+      <!-- 收益率对比走势图 -->
+      <div class="section">
+        <div class="section-title" id="returnChartTitle">收益率走势对比（策略 vs 创业板 vs 红利，起点=1.0）</div>
+        <div class="chart-container">
+          <canvas id="returnChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      比值轮动交易决策辅助系统 · 数据更新时间：<span id="updateTime"></span><br>
+      仅供决策参考，不构成投资建议
+    </div>
+  </div>
+
+  <script>
+    let cybData = null;
+    let kcbData = null;
+    let currentTab = 'cyb';
+    let chartInstance = null;
+    let returnChartInstance = null;
+
+    // 加载数据
+    async function loadData() {
+      let resp;
+      try {
+        resp = await fetch('frontend_data.json');
+        if (!resp.ok) throw new Error('not found');
+      } catch (e) {
+        resp = await fetch('data/frontend_data.json');
+      }
+      return await resp.json();
+    }
+
+    // 格式化数字
+    function fmt(n, digits = 2) {
+      if (n === null || n === undefined) return '-';
+      return Number(n).toLocaleString('zh-CN', { maximumFractionDigits: digits });
+    }
+
+    function fmtPct(n, digits = 2) {
+      if (n === null || n === undefined) return '-';
+      const sign = n >= 0 ? '+' : '';
+      return sign + Number(n).toFixed(digits) + '%';
+    }
+
+    // 渲染自使用以来指标（全部since_use口径，统计时间维度一致）
+    // 起始日固定为 2026-08-01（用户启用本系统的日期）
+    function renderMetrics(m) {
+      const grid = document.getElementById('metricsGrid');
+      const startLabel = '自' + m.start_date + '起';  // 自2026-08-01起
+      const endLabel = m.has_data ? m.end_date.slice(5) : '尚未开始';  // 08-04
+      // 指标卡标签跟随当前页签，明确是哪个策略的仓位
+      const idxName = currentTab === 'kcb' ? '科创50' : '创业板';
+      const items = [
+        { label: '累计收益', value: fmtPct(m.total_ret), cls: m.total_ret >= 0 ? 'positive' : 'negative', sub: m.has_data ? `截至${endLabel}` : startLabel },
+        { label: idxName + '日均仓位', value: m.avg_weight + '%', cls: '', sub: startLabel },
+        { label: '最大回撤', value: fmtPct(m.max_drawdown), cls: 'negative', sub: m.has_data ? '区间最大' : startLabel },
+        { label: '总调仓', value: m.trade_count + '次', cls: '', sub: `买${m.buy_count} 卖${m.sell_count}` },
+        { label: '交易日', value: m.trading_days + '天', cls: '', sub: startLabel }
+      ];
+      grid.innerHTML = items.map(it => `
+        <div class="metric-card">
+          <div class="label">${it.label}</div>
+          <div class="value ${it.cls}">${it.value}</div>
+          <div class="sub">${it.sub}</div>
+        </div>
+      `).join('');
+    }
+
+    // 渲染当前状态（分区布局）
+    function renderStatus(s, z, cfg) {
+      if (!s) return;
+      // 动态读取当前策略的阈值（创业板/科创50不同）
+      const buyTop = cfg ? cfg.buy_zone_top : 0.35;
+      const sellBottom = cfg ? cfg.sell_zone_bottom : 0.6;
+      const idxName = currentTab === 'kcb' ? '科创50' : '创业板';
+
+      const zone = s.ratio <= buyTop ? '买入区' : (s.ratio >= sellBottom ? '卖出区' : '滞回带');
+      const zoneCls = s.ratio <= buyTop ? 'zone-buy' : (s.ratio >= sellBottom ? 'zone-sell' : 'zone-hold');
+      const actionCls = s.ratio <= buyTop ? 'alert' : (s.ratio >= sellBottom ? 'success' : '');
+      const ratioColor = s.ratio <= buyTop ? 'var(--pos)' : (s.ratio >= sellBottom ? 'var(--neg)' : 'var(--text)');
+
+      // 标尺基于比值线性坐标系（5段细分）
+      // 深度买入区 | 买入区 | 滞回带 | 卖出区 | 深度卖出区
+      // 深度区用历史分位数定义（p5/p95），与策略档位解耦，避免深度区过窄
+      // 深度买入区 = 历史最低 ~ p5分位（历史最低5%的极端行情）
+      // 买入区 = p5分位 ~ 买入上界（策略实际触发买入的区间）
+      // 卖出区 = 卖出下界 ~ p95分位（策略实际触发卖出的区间）
+      // 深度卖出区 = p95分位 ~ 历史最高（历史最高5%的极端行情）
+      const p5Ratio = z.p5_ratio || (z.min_ratio + (z.max_ratio - z.min_ratio) * 0.05);
+      const p95Ratio = z.p95_ratio || (z.max_ratio - (z.max_ratio - z.min_ratio) * 0.05);
+      const range = z.max_ratio - z.min_ratio;
+      const ratioPct = range > 0 ? Math.max(0, Math.min(100, ((s.ratio - z.min_ratio) / range) * 100)) : 50;
+      const buyBottomPct = range > 0 ? Math.max(0, Math.min(100, ((p5Ratio - z.min_ratio) / range) * 100)) : 0;
+      const buyTopPct = range > 0 ? Math.max(0, Math.min(100, ((buyTop - z.min_ratio) / range) * 100)) : 0;
+      const sellBottomPct = range > 0 ? Math.max(0, Math.min(100, ((sellBottom - z.min_ratio) / range) * 100)) : 100;
+      const sellTopPct = range > 0 ? Math.max(0, Math.min(100, ((p95Ratio - z.min_ratio) / range) * 100)) : 100;
+
+      document.getElementById('statusDate').textContent = s.date;
+
+      const html = `
+        <!-- 比值大数字展示 -->
+        <div class="ratio-display" style="text-align:center;">
+          <div class="ratio-value" style="color:${ratioColor}">
+            ${s.ratio.toFixed(4)}
+          </div>
+          <div class="ratio-label">当日比值 · 历史分位 p${s.percentile}</div>
+          <div class="ratio-zone ${zoneCls}">${zone}</div>
+        </div>
+
+        <!-- 比值历史位置标尺 -->
+        <div class="ratio-ruler-wrap">
+          <div class="ratio-ruler-title">
+            <span>历史最低 ${z.min_ratio}</span>
+            <span>当前位置</span>
+            <span>${z.max_ratio} 历史最高</span>
+          </div>
+          <div class="ratio-ruler">
+            <div class="ratio-ruler-inner">
+              <div class="ruler-zone ruler-buy-deep" style="left:0;width:${buyBottomPct}%"></div>
+              <div class="ruler-zone ruler-buy" style="left:${buyBottomPct}%;width:${buyTopPct - buyBottomPct}%"></div>
+              <div class="ruler-zone ruler-hold" style="left:${buyTopPct}%;width:${sellBottomPct - buyTopPct}%"></div>
+              <div class="ruler-zone ruler-sell" style="left:${sellBottomPct}%;width:${sellTopPct - sellBottomPct}%"></div>
+              <div class="ruler-zone ruler-sell-deep" style="left:${sellTopPct}%;width:${100 - sellTopPct}%"></div>
+            </div>
+            <div class="ruler-zone-hover ruler-buy-deep" style="left:0;width:${buyBottomPct}%" data-tip="深度买入区: 比值≤${p5Ratio}（历史最低5%极端行情）"></div>
+            <div class="ruler-zone-hover ruler-buy" style="left:${buyBottomPct}%;width:${buyTopPct - buyBottomPct}%" data-tip="买入区: ${p5Ratio}~${buyTop}（策略触发买入）"></div>
+            <div class="ruler-zone-hover ruler-hold" style="left:${buyTopPct}%;width:${sellBottomPct - buyTopPct}%" data-tip="滞回带: ${buyTop}~${sellBottom}（不操作）"></div>
+            <div class="ruler-zone-hover ruler-sell" style="left:${sellBottomPct}%;width:${sellTopPct - sellBottomPct}%" data-tip="卖出区: ${sellBottom}~${p95Ratio}（策略触发卖出）"></div>
+            <div class="ruler-zone-hover ruler-sell-deep" style="left:${sellTopPct}%;width:${100 - sellTopPct}%" data-tip="深度卖出区: 比值≥${p95Ratio}（历史最高5%极端行情）"></div>
+            <div class="ruler-marker" style="left:${ratioPct}%" data-tip="当前比值: ${s.ratio.toFixed(4)}"></div>
+          </div>
+          <div class="ratio-ruler-legend">
+            <span class="legend-item"><i class="legend-dot legend-buy-deep"></i>深度买入区(≤${p5Ratio})</span>
+            <span class="legend-item"><i class="legend-dot legend-buy"></i>买入区(${p5Ratio}~${buyTop})</span>
+            <span class="legend-item"><i class="legend-dot legend-hold"></i>滞回带</span>
+            <span class="legend-item"><i class="legend-dot legend-sell"></i>卖出区(${sellBottom}~${p95Ratio})</span>
+            <span class="legend-item"><i class="legend-dot legend-sell-deep"></i>深度卖出区(≥${p95Ratio})</span>
+          </div>
+          <div class="ratio-ruler-note">
+            <strong>说明：</strong>深度买入区、深度卖出区属于历史上很少见的极端行情。为避免策略过度拟合历史数据，这两个区间没有安排自动操作计划；真到了那种情况，再看是否动用其他资金参与。
+          </div>
+        </div>
+
+        <!-- 仓位展示（卡片式，避免100%绿条无信息量） -->
+        <div class="position-cards">
+          <div class="pos-card ${s.cyb_weight > 0 ? 'active' : ''}">
+            <div class="pos-card-label">${idxName}仓位</div>
+            <div class="pos-card-value ${s.cyb_weight > 0 ? 'pos-red' : 'pos-zero'}">${s.cyb_weight}%</div>
+            <div class="pos-card-sub">${s.cyb_weight > 0 ? '持有' : '空仓'}</div>
+          </div>
+          <div class="pos-card ${s.hli_weight > 0 ? 'active' : ''}">
+            <div class="pos-card-label">红利仓位</div>
+            <div class="pos-card-value ${s.hli_weight > 0 ? 'pos-green' : 'pos-zero'}">${s.hli_weight}%</div>
+            <div class="pos-card-sub">${s.hli_weight > 0 ? '持有' : '空仓'}</div>
+          </div>
+          <div class="pos-card">
+            <div class="pos-card-label">总仓位</div>
+            <div class="pos-card-value">${s.cyb_weight + s.hli_weight}%</div>
+            <div class="pos-card-sub">${s.cyb_weight + s.hli_weight >= 100 ? '满仓' : '有现金'}</div>
+          </div>
+        </div>
+
+        <!-- 下步操作 -->
+        <div class="next-action ${actionCls}">
+          <div class="label">下步操作</div>
+          <div class="value">${s.next_action || '无'}</div>
+        </div>
+
+        <!-- 详细信息 -->
+        <div class="status-detail-grid">
+          <div class="status-detail-item">
+            <div class="label">${idxName}收盘</div>
+            <div class="value">${fmt(s.cyb_close)}</div>
+          </div>
+          <div class="status-detail-item">
+            <div class="label">红利收盘</div>
+            <div class="value">${fmt(s.hli_close)}</div>
+          </div>
+          <div class="status-detail-item">
+            <div class="label">历史最低比值</div>
+            <div class="value">${z.min_ratio}</div>
+          </div>
+          <div class="status-detail-item">
+            <div class="label">历史最高比值</div>
+            <div class="value">${z.max_ratio}</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('statusContent').innerHTML = html;
+    }
+
+    // 渲染走势图
+    function renderChart(monthly) {
+      const ctx = document.getElementById('chart').getContext('2d');
+      document.getElementById('chartTitle').textContent = (currentTab === 'kcb' ? '科创50' : '创业板') + '/红利走势与仓位对应图（月度）';
+      const labels = monthly.map(m => m.date);
+      const cybData = monthly.map(m => m.cyb_close);
+      const hliData = monthly.map(m => m.hli_close);
+      const weightData = monthly.map(m => m.cyb_weight);
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'line',
+              label: (currentTab === 'kcb' ? '科创50' : '创业板指') + '收盘价',
+              data: cybData,
+              borderColor: '#e74c3c',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+              borderWidth: 2,
+              yAxisID: 'y1',
+              tension: 0.1,
+              pointRadius: 0
+            },
+            {
+              type: 'line',
+              label: '中证红利收盘价',
+              data: hliData,
+              borderColor: '#16a085',
+              backgroundColor: 'rgba(22, 160, 133, 0.1)',
+              borderWidth: 2,
+              yAxisID: 'y1',
+              tension: 0.1,
+              pointRadius: 0
+            },
+            {
+              type: 'line',
+              label: (currentTab === 'kcb' ? '科创50' : '创业板') + '仓位(%)',
+              data: weightData,
+              borderColor: '#1e3c72',
+              backgroundColor: 'rgba(30, 60, 114, 0.2)',
+              borderWidth: 1.5,
+              yAxisID: 'y2',
+              fill: true,
+              tension: 0.1,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  if (ctx.datasetIndex === 0) return (currentTab === 'kcb' ? '科创50' : '创业板') + ': ' + ctx.parsed.y.toFixed(2);
+                  if (ctx.datasetIndex === 1) return '红利: ' + ctx.parsed.y.toFixed(2);
+                  return '仓位: ' + ctx.parsed.y + '%';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxTicksLimit: window.innerWidth < 768 ? 8 : 24,
+                maxRotation: 45,
+                font: { size: 11 }
+              }
+            },
+            y1: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: '指数点位', font: { size: 12 } },
+              ticks: { color: '#666', font: { size: 11 } }
+            },
+            y2: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              max: 100,
+              title: { display: true, text: '仓位(%)', font: { size: 12 } },
+              ticks: { color: '#1e3c72', callback: v => v + '%', font: { size: 11 } },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    // 渲染收益率对比走势图（策略 vs 创业板 vs 红利）
+    function renderReturnChart(comparison) {
+      const ctx = document.getElementById('returnChart').getContext('2d');
+      document.getElementById('returnChartTitle').textContent = '收益率走势对比（策略 vs ' + (currentTab === 'kcb' ? '科创50' : '创业板') + ' vs 红利，起点=1.0）';
+      const labels = comparison.map(m => m.date);
+      const strategyData = comparison.map(m => m.strategy);
+      const cybData = comparison.map(m => m.cyb);
+      const hliData = comparison.map(m => m.hli);
+
+      returnChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '本策略',
+              data: strategyData,
+              borderColor: '#1e3c72',
+              backgroundColor: 'rgba(30, 60, 114, 0.1)',
+              borderWidth: 2.5,
+              yAxisID: 'y',
+              tension: 0.1,
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: currentTab === 'kcb' ? '科创50' : '创业板指',
+              data: cybData,
+              borderColor: '#e74c3c',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+              borderWidth: 2,
+              yAxisID: 'y',
+              tension: 0.1,
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: '中证红利',
+              data: hliData,
+              borderColor: '#16a085',
+              backgroundColor: 'rgba(22, 160, 133, 0.1)',
+              borderWidth: 2,
+              yAxisID: 'y',
+              tension: 0.1,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const names = ['本策略', currentTab === 'kcb' ? '科创50' : '创业板指', '中证红利'];
+                  const ret = ((ctx.parsed.y - 1) * 100).toFixed(1);
+                  return names[ctx.datasetIndex] + ': 净值' + ctx.parsed.y.toFixed(3) + ' (收益' + (ret >= 0 ? '+' : '') + ret + '%)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxTicksLimit: window.innerWidth < 768 ? 8 : 24,
+                maxRotation: 45,
+                font: { size: 11 }
+              }
+            },
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: '累计净值（起点=1.0）', font: { size: 12 } },
+              ticks: {
+                color: '#666',
+                font: { size: 11 },
+                callback: v => v.toFixed(2)
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 渲染历年收益表（桌面端）
+    function renderYearlyTable(yearly) {
+      const tbl = document.getElementById('yearlyTable');
+      let html = `<thead><tr>
+        <th>年份</th><th>策略收益</th><th>最大回撤</th>
+        <th>均仓</th><th>买入</th><th>卖出</th><th>${currentTab === 'kcb' ? '科创50' : '创业板'}</th><th>红利</th><th>主要动作</th>
+      </tr></thead><tbody>`;
+      // 倒序渲染：最新年份在最上面
+      for (let i = yearly.length - 1; i >= 0; i--) {
+        const y = yearly[i];
+        html += `<tr>
+          <td>${y.year}</td>
+          <td class="${y.annual_ret >= 0 ? 'pos' : 'neg'}">${fmtPct(y.annual_ret)}</td>
+          <td class="neg">${fmtPct(y.max_drawdown)}</td>
+          <td>${y.avg_weight}%</td>
+          <td>${y.buy_count}</td>
+          <td>${y.sell_count}</td>
+          <td class="${y.cyb_ret >= 0 ? 'pos' : 'neg'}">${fmtPct(y.cyb_ret, 1)}</td>
+          <td class="${y.hli_ret >= 0 ? 'pos' : 'neg'}">${fmtPct(y.hli_ret, 1)}</td>
+          <td style="text-align:left;font-size:12px;">${y.summary}</td>
+        </tr>`;
+      }
+      html += '</tbody>';
+      tbl.innerHTML = html;
+    }
+
+    // 渲染历年收益（移动端卡片）
+    function renderYearlyMobile(yearly) {
+      const container = document.getElementById('yearlyMobile');
+      // 倒序渲染：最新年份在最上面
+      const reversed = [...yearly].reverse();
+      container.innerHTML = reversed.map(y => `
+        <div class="year-card" style="border-left-color:${y.annual_ret >= 0 ? 'var(--pos)' : 'var(--neg)'}">
+          <div class="year-card-head">
+            <span class="year-card-year">${y.year}</span>
+            <span class="year-card-ret ${y.annual_ret >= 0 ? 'pos' : 'neg'}">${fmtPct(y.annual_ret)}</span>
+          </div>
+          <div class="year-card-meta">
+            <div class="year-card-meta-item">
+              <div>均仓</div>
+              <div class="v">${y.avg_weight}%</div>
+            </div>
+            <div class="year-card-meta-item">
+              <div>回撤</div>
+              <div class="v neg">${fmtPct(y.max_drawdown, 1)}</div>
+            </div>
+            <div class="year-card-meta-item">
+              <div>调仓</div>
+              <div class="v">${y.buy_count + y.sell_count}次</div>
+            </div>
+          </div>
+          <div class="year-card-summary">${y.summary}</div>
+        </div>
+      `).join('');
+    }
+
+    // 渲染档位表
+    function renderTiers(stratConf) {
+      const buyTbl = document.getElementById('buyTiersTable');
+      let buyHtml = `<thead><tr><th>档位</th><th>比值≤</th><th>累计仓位</th></tr></thead><tbody>`;
+      stratConf.buy_levels.forEach((th, i) => {
+        buyHtml += `<tr><td>买${i + 1}档</td><td>${th.toFixed(4)}</td><td>${(i + 1) * 5}%</td></tr>`;
+      });
+      buyHtml += '</tbody>';
+      buyTbl.innerHTML = buyHtml;
+
+      const sellTbl = document.getElementById('sellTiersTable');
+      let sellHtml = `<thead><tr><th>档位</th><th>比值≥</th><th>剩余仓位</th></tr></thead><tbody>`;
+      stratConf.sell_levels.forEach((th, i) => {
+        sellHtml += `<tr><td>卖${i + 1}档</td><td>${th.toFixed(4)}</td><td>${100 - (i + 1) * 5}%</td></tr>`;
+      });
+      sellHtml += '</tbody>';
+      sellTbl.innerHTML = sellHtml;
+    }
+
+    // 渲染调仓记录
+    function renderTrades(trades) {
+      const tbl = document.getElementById('tradesTable');
+      let html = `<thead><tr>
+        <th>信号日</th><th>执行日</th><th>方向</th><th>档数</th>
+        <th>比值</th><th>仓前</th><th>仓后</th>
+      </tr></thead><tbody>`;
+      for (const t of trades) {
+        const dirCls = t.direction === 'BUY' ? 'action-buy' : 'action-sell';
+        const dirText = t.direction === 'BUY' ? '买入' : '卖出';
+        html += `<tr>
+          <td>${t.signal_date}</td>
+          <td>${t.exec_date}</td>
+          <td class="${dirCls}">${dirText}</td>
+          <td>${t.tiers}</td>
+          <td>${t.ratio.toFixed(4)}</td>
+          <td>${t.weight_before}%</td>
+          <td>${t.weight_after}%</td>
+        </tr>`;
+      }
+      html += '</tbody>';
+      tbl.innerHTML = html;
+    }
+
+    // 渲染日别数据
+    function renderDaily(daily) {
+      const tbl = document.getElementById('dailyTable');
+      let html = `<thead><tr>
+        <th>日期</th><th>比值</th><th>${currentTab === 'kcb' ? '科创50' : '创业板'}</th><th>红利</th><th>仓位</th>
+        <th>操作</th><th>档数</th><th>当日收益</th>
+      </tr></thead><tbody>`;
+      for (const r of daily) {
+        const actionMap = { BUY: '买入', SELL: '卖出', HOLD: '持有', FULL_HOLD: '满仓', EMPTY: '空仓' };
+        const actionText = actionMap[r.action] || r.action;
+        const actionCls = r.action === 'BUY' ? 'action-buy' : (r.action === 'SELL' ? 'action-sell' : 'action-hold');
+        html += `<tr>
+          <td>${r.date}</td>
+          <td>${r.ratio.toFixed(4)}</td>
+          <td>${fmt(r.cyb_close)}</td>
+          <td>${fmt(r.hli_close)}</td>
+          <td>${r.cyb_weight}%</td>
+          <td class="${actionCls}">${actionText}</td>
+          <td>${r.action_tiers > 0 ? r.action_tiers : '-'}</td>
+          <td class="${r.daily_ret >= 0 ? 'pos' : 'neg'}">${fmtPct(r.daily_ret)}</td>
+        </tr>`;
+      }
+      html += '</tbody>';
+      tbl.innerHTML = html;
+    }
+
+    // 渲染所有数据
+    function renderAll(data) {
+      document.getElementById('updateTime').textContent = new Date(data.generated_at).toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      });
+      // 动态更新头部标题、描述和档位表标题（切换页签时跟随当前策略参数）
+      const idxName = currentTab === 'kcb' ? '科创50' : '创业板';
+      const idxCode = currentTab === 'kcb' ? '000688' : '399006';
+      const buyTop = data.strategy_config ? data.strategy_config.buy_zone_top : 0.35;
+      const sellBottom = data.strategy_config ? data.strategy_config.sell_zone_bottom : 0.6;
+      document.getElementById('headerTitle').textContent = `${idxName}/红利比值轮动`;
+      document.getElementById('headerDesc').textContent = `${idxName}指(${idxCode}) ÷ 中证红利(000922) 比值，买入区≤${buyTop}分批加仓，卖出区≥${sellBottom}分批减仓，滞回带不操作`;
+      document.getElementById('buyTierTitle').textContent = `买入档位（比值≤${buyTop}）`;
+      document.getElementById('sellTierTitle').textContent = `卖出档位（比值≥${sellBottom}）`;
+      renderMetrics(data.since_use_metrics);
+      renderStatus(data.current_status, data.zone_stats, data.strategy_config);
+      renderChart(data.monthly_chart);
+      if (data.return_comparison && data.return_comparison.length > 0) {
+        renderReturnChart(data.return_comparison);
+      }
+      renderYearlyTable(data.yearly_returns);
+      renderYearlyMobile(data.yearly_returns);
+      renderTiers(data.strategy_config);
+      renderTrades(data.recent_trades);
+      renderDaily(data.recent_daily);
+    }
+
+    // 页签切换
+    function switchTab(tab) {
+      if (tab === currentTab) return;
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+      // 销毁旧图表
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      if (returnChartInstance) { returnChartInstance.destroy(); returnChartInstance = null; }
+      // 渲染新数据
+      const data = tab === 'cyb' ? cybData : kcbData;
+      if (data) {
+        renderAll(data);
+      } else {
+        document.getElementById('content').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('loading').innerHTML = '<p style="text-align:center;color:rgba(255,255,255,0.5);padding:40px;">科创50数据尚未初始化</p>';
+      }
+    }
+
+    // 主函数
+    async function main() {
+      try {
+        const data = await loadData();
+
+        cybData = data;
+        kcbData = data.kcb;
+        delete cybData.kcb;
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+        renderAll(cybData);
+      } catch (e) {
+        document.getElementById('loading').innerHTML = '数据加载失败：' + e.message + '<br>请确保 frontend_data.json 存在';
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>

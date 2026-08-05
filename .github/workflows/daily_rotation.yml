@@ -1,0 +1,129 @@
+name: 创红轮动每日推送
+
+on:
+  # ⚠️ 严格参考 AI 算力新闻项目方案：
+  # cron-job.org 是唯一调度源（每天 16:00 POST 到 workflow_dispatch API）
+  # GitHub Actions schedule cron 因经常延迟数小时至十小时以上而废弃
+  workflow_dispatch:
+    inputs:
+      skip_pipeline:
+        description: '跳过数据流水线，仅重新部署前端（数据已有时使用）'
+        type: boolean
+        default: false
+      force_refresh:
+        description: '强制重新生成数据（覆盖今日已有数据）'
+        type: boolean
+        default: false
+
+env:
+  RUN_ID: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+
+jobs:
+  daily-rotation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: |
+          node workflow_logger.cjs --record "安装依赖" "running"
+          npm ci
+          node workflow_logger.cjs --record "安装依赖" "success"
+
+      - name: 幂等检查（OSS今日数据是否已生成）
+        id: id_check
+        if: ${{ ! inputs.skip_pipeline && ! inputs.force_refresh }}
+        continue-on-error: true
+        run: node check_oss_today.cjs
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 下载历史数据（从 OSS 恢复状态）
+        if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
+        run: |
+          node workflow_logger.cjs --record "下载数据" "running"
+          node oss_data_sync.cjs download
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "下载数据" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "下载数据" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 运行每日任务（采集数据+信号判定+收益计算+推送）
+        if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
+        run: |
+          node workflow_logger.cjs --record "运行每日任务" "running"
+          output=$(node main.cjs run-daily 2>&1)
+          rc=$?
+          echo "$output"
+          if [ $rc -ne 0 ]; then
+            err=$(echo "$output" | tail -10)
+            node workflow_logger.cjs --record "运行每日任务" "failure" "$err"
+            exit $rc
+          fi
+          # 提取关键信息
+          summary=$(echo "$output" | grep -E "(完成|✓|仓位|比值|信号)" | tail -3 | tr '\n' ' ')
+          node workflow_logger.cjs --record "运行每日任务" "success" "$summary"
+        env:
+          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+          FORCE_REFRESH: ${{ inputs.force_refresh == true && '1' || '' }}
+
+      - name: 上传更新后的数据到 OSS（状态持久化）
+        if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
+        run: |
+          node workflow_logger.cjs --record "上传数据" "running"
+          node oss_data_sync.cjs upload
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "上传数据" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "上传数据" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 部署前端到 OSS + 刷新 CDN
+        run: |
+          node workflow_logger.cjs --record "部署前端" "running"
+          node deploy.cjs
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "部署前端" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "部署前端" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          CDN_DOMAIN: portfolio-analysis.top
+
+      - name: 汇总报告并发送通知
+        if: always()
+        run: |
+          node workflow_logger.cjs --finish "${{ env.RUN_ID }}"
+        env:
+          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}

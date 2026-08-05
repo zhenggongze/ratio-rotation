@@ -1,0 +1,27 @@
+{
+  "name": "ratio-rotation",
+  "version": "1.0.0",
+  "description": "创业板/中证红利比值轮动交易决策辅助系统",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "node main.cjs",
+    "run-daily": "node main.cjs run-daily",
+    "run-yearly": "node main.cjs run-yearly",
+    "check-calibration": "node main.cjs check-calibration",
+    "show-strategy": "node main.cjs show-strategy",
+    "init-history": "node main.cjs init-history",
+    "replay": "node main.cjs replay",
+    "push-test": "node main.cjs push-test",
+    "fetch-test": "node main.cjs fetch-test",
+    "export-excel": "node main.cjs export-excel",
+    "backup": "node main.cjs backup",
+    "confirm-trade": "node main.cjs confirm-trade",
+    "set-param": "node main.cjs set-param",
+    "test": "node --test tests/strategy.test.cjs tests/engine.test.cjs tests/calibrate.test.cjs tests/pusher.test.cjs tests/replay.test.cjs tests/robustness.test.cjs"
+  },
+  "dependencies": {
+    "ali-oss": "^6.23.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0"
+  }
+}
