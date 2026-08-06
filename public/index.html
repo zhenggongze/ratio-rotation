@@ -549,6 +549,8 @@
     .t0-status-tag.ok { background: rgba(231, 76, 60, 0.1); color: var(--pos); }
     .t0-status-tag.warn { background: rgba(243, 156, 18, 0.12); color: #b9770e; }
     .t0-status-tag.gray { background: rgba(149, 165, 166, 0.12); color: var(--text-light); }
+    .t0-daily-stats { margin-top: 8px; font-size: 12px; color: var(--text-light); }
+    .t0-daily-stats b { color: var(--pos); font-weight: 600; }
 
     /* ===== 仓位卡片 ===== */
     .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
@@ -706,6 +708,7 @@
             <tbody id="t0DailyBody"></tbody>
           </table>
         </div>
+        <div class="t0-daily-stats" id="t0DailyStats"></div>
         <div class="ratio-ruler-note">每日记录从今日起统计，每个交易日 16:00 收盘后自动追加当日记录（当日 K 线完整后成交与盈亏才确定；15:30 前为"待收盘"）。</div>
       </div>
 
@@ -1311,7 +1314,7 @@
           { label: '持有收益(50万)', value: wan(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '傻拿不动基准' },
           { label: '超额收益', value: wan(s.excess_profit), cls: s.excess_profit >= 0 ? 'positive' : 'negative', sub: 'vs 持有' },
           { label: '成交笔数', value: s.total_trades + '笔', cls: '', sub: '手续费 ' + wan(s.commission) },
-          { label: '双边成交', value: s.both_days + '天', cls: '', sub: '仅买收盘恢复 ' + s.buy_only_days + ' 天' },
+          { label: '双边成交', value: s.both_days + '天', cls: '', sub: `占${(s.both_days / s.trading_days * 100).toFixed(1)}% · 仅买收盘恢复 ${s.buy_only_days} 天（${(s.buy_only_days / s.trading_days * 100).toFixed(1)}%）` },
           { label: '最差单日', value: wan(s.worst_day), cls: 'negative', sub: '暴跌日买入卖不掉' }
         ];
         document.getElementById('t0MetricsGrid').innerHTML = items.map(it => `
@@ -1382,10 +1385,21 @@
       if (!body) return;
       if (!daily || !daily.records || daily.records.length === 0) {
         if (meta) meta.textContent = '';
+        const statsEl = document.getElementById('t0DailyStats');
+        if (statsEl) statsEl.textContent = '';
         body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
         return;
       }
       if (meta) meta.textContent = '更新于 ' + (daily.updated_at || '');
+      // 汇总统计（占累计记录天数比例）
+      const total = daily.records.length;
+      const cnt = s => daily.records.filter(r => r.status === s).length;
+      const pct = n => (n / total * 100).toFixed(1) + '%';
+      const statsEl = document.getElementById('t0DailyStats');
+      if (statsEl) {
+        const both = cnt('双边成交'), recover = cnt('仅买收盘恢复'), skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
+        statsEl.innerHTML = `累计 ${total} 个交易日 · 双边成交 <b>${both}</b> 天（${pct(both)}）· 仅买收盘恢复 ${recover} 天（${pct(recover)}）· 未触发 ${untrig} 天 · 跳过 ${skip} 天${pend ? ` · 待收盘 ${pend} 天` : ''}`;
+      }
       const rows = [...daily.records].reverse(); // 最新在上
       body.innerHTML = rows.map(r => {
         const statusCls = r.status === '双边成交' ? 'ok'

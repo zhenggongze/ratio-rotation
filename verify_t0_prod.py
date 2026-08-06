@@ -47,13 +47,23 @@ with sync_playwright() as p:
     # ===== 每日记录模块 =====
     daily_meta = page.evaluate("() => { const el = document.getElementById('t0DailyMeta'); return el ? el.textContent : null; }")
     daily_rows = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyBody tr')).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
+    daily_stats = page.evaluate("() => { const el = document.getElementById('t0DailyStats'); return el ? el.innerText : null; }")
     print("\n=== 每日记录 ===")
     print("更新时间:", daily_meta)
     print("行数:", len(daily_rows))
     for r in daily_rows[:3]:
         print("  -", r)
+    print("统计行:", daily_stats)
     daily_check = bool(re.search(r"更新于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", daily_meta or ""))
     print("更新时间含秒级:", daily_check)
+
+    # 历史业绩"双边成交"占比（sub 文本）
+    both_card = next((m for m in metrics if "双边成交" in m), "")
+    print("\n双边成交卡:", both_card)
+    both_pct_ok = bool(re.search(r"双边成交\s*577天.*占\d+\.\d%", both_card.replace("\u00a0", "")))
+    print("双边成交占比标注:", both_pct_ok)
+    daily_stats_ok = bool(re.search(r"累计 \d+ 个交易日.*双边成交 \d+ 天（\d+\.\d%）", daily_stats or ""))
+    print("每日记录统计占比:", daily_stats_ok)
 
     full = sig + " " + " ".join(metrics) + " " + (daily_meta or "") + " " + " ".join(daily_rows)
     checks = [
@@ -63,6 +73,8 @@ with sync_playwright() as p:
         ("超额 73.1万", bool(re.search(r"73[.,]1|731,022|731022", full))),
         ("每日记录更新时间（秒级）", daily_check),
         ("每日记录含今日行", any("2026-08-06" in r for r in daily_rows)),
+        ("历史业绩双边成交占比", both_pct_ok),
+        ("每日记录统计占比", daily_stats_ok),
     ]
     print("\n=== 断言 ===")
     for name, ok in checks:
