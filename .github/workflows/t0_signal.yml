@@ -1,0 +1,129 @@
+name: 做T信号盘前推送
+
+on:
+  # ⚠️ 与 daily_rotation.yml 同方案：cron-job.org 是唯一调度源（每天 9:25 POST 到 workflow_dispatch API）
+  # GitHub Actions schedule cron 因经常延迟而废弃
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: '强制重新计算（覆盖今日已有信号）'
+        type: boolean
+        default: false
+
+env:
+  RUN_ID: ${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+
+jobs:
+  t0-signal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: |
+          node workflow_logger.cjs --record "安装依赖" "running"
+          npm ci
+          node workflow_logger.cjs --record "安装依赖" "success"
+
+      - name: 幂等检查（今日做T信号是否已生成）
+        id: id_check
+        if: ${{ ! inputs.force_refresh }}
+        continue-on-error: true
+        run: node check_t0_today.cjs
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 下载数据（OSS → 本地，含 t0 回测与历史信号）
+        run: |
+          node workflow_logger.cjs --record "下载数据" "running"
+          node oss_data_sync.cjs download
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "下载数据" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "下载数据" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 生成回测数据（若缺失）
+        run: |
+          if [ ! -f data/t0/t0_backtest.json ]; then
+            node -e "require('./t0_engine.cjs').buildBacktestJson()"
+          else
+            echo "回测数据已存在，跳过生成"
+          fi
+
+      - name: 计算今日做T信号并推送 PushDeer
+        if: ${{ inputs.force_refresh || steps.id_check.outcome != 'success' }}
+        run: |
+          node workflow_logger.cjs --record "做T信号" "running"
+          output=$(node t0_signal.cjs --push 2>&1)
+          rc=$?
+          echo "$output"
+          if [ $rc -ne 0 ]; then
+            err=$(echo "$output" | tail -10)
+            node workflow_logger.cjs --record "做T信号" "failure" "$err"
+            exit $rc
+          fi
+          summary=$(echo "$output" | grep "SIGNAL_SUMMARY" | tail -1)
+          node workflow_logger.cjs --record "做T信号" "success" "$summary"
+        env:
+          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+
+      - name: 上传数据到 OSS（状态持久化）
+        run: |
+          node workflow_logger.cjs --record "上传数据" "running"
+          node oss_data_sync.cjs upload
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "上传数据" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "上传数据" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+
+      - name: 部署前端（含今日做T信号）到 OSS + 刷新 CDN
+        run: |
+          node workflow_logger.cjs --record "部署前端" "running"
+          node export_frontend_data.cjs
+          node deploy.cjs
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            node workflow_logger.cjs --record "部署前端" "failure" "exit=$rc"
+            exit $rc
+          fi
+          node workflow_logger.cjs --record "部署前端" "success"
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          CDN_DOMAIN: portfolio-analysis.top
+
+      - name: 汇总报告并发送通知
+        if: always()
+        run: |
+          node workflow_logger.cjs --finish "${{ env.RUN_ID }}"
+        env:
+          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}

@@ -518,6 +518,22 @@
     .ratio-ruler-note { margin-top: 10px; padding: 10px 12px; background: #f8f9fb; border-left: 3px solid var(--blue); border-radius: 4px; font-size: 12px; color: var(--text-light); line-height: 1.6; }
     .ratio-ruler-note strong { color: var(--text); font-weight: 600; }
 
+    /* ===== 红利做T页签样式 ===== */
+    .t0-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+    .t0-badge.status-ready { background: rgba(231, 76, 60, 0.1); color: var(--pos); border: 1px solid rgba(231, 76, 60, 0.3); }
+    .t0-badge.status-skip { background: rgba(149, 165, 166, 0.12); color: var(--text-light); border: 1px solid var(--border); }
+    .t0-prices { display: flex; align-items: center; justify-content: center; gap: 24px; margin: 12px 0; flex-wrap: wrap; }
+    .t0-price-box { text-align: center; padding: 16px 28px; border-radius: var(--radius); background: #f8f9fb; border: 1px solid var(--border); min-width: 160px; }
+    .t0-price-label { font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
+    .t0-price-value { font-size: 30px; font-weight: 700; letter-spacing: 1px; }
+    .t0-price-value.buy { color: var(--pos); }
+    .t0-price-value.sell { color: var(--neg); }
+    .t0-price-sub { font-size: 11px; color: var(--text-lighter); margin-top: 4px; }
+    .t0-arrow { font-size: 22px; color: var(--text-lighter); }
+    .t0-info { text-align: center; font-size: 13px; color: var(--text); margin: 10px 0 4px; }
+    .t0-note { margin-top: 12px; padding: 10px 12px; background: #f8f9fb; border-left: 3px solid var(--yellow); border-radius: 4px; font-size: 12px; color: var(--text-light); line-height: 1.6; }
+    .t0-note strong { color: var(--text); }
+
     /* ===== 仓位卡片 ===== */
     .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
     .pos-card { padding: 12px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; transition: all 0.2s; }
@@ -544,6 +560,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="cyb" onclick="switchTab('cyb')">创业板/红利</button>
       <button class="tab" data-tab="kcb" onclick="switchTab('kcb')">科创50/红利(辅助)</button>
+      <button class="tab" data-tab="t0" onclick="switchTab('t0')">红利做T</button>
     </div>
 
     <!-- 加载状态 -->
@@ -551,6 +568,9 @@
 
     <!-- 内容区 -->
     <div id="content" style="display:none;">
+
+    <!-- 轮动策略内容（创业板/科创50共用） -->
+    <div id="rotationContent">
 
       <!-- 自使用以来指标 -->
       <div class="metrics-grid" id="metricsGrid"></div>
@@ -629,6 +649,45 @@
         </div>
       </div>
     </div>
+    <!-- /rotationContent -->
+
+    <!-- 红利做T内容（515180 日内做T） -->
+    <div id="t0Content" style="display:none;">
+
+      <!-- 今日做T信号卡 -->
+      <div class="section">
+        <div class="section-title">
+          今日做T信号
+          <span class="section-subtitle" id="t0SignalDate"></span>
+        </div>
+        <div id="t0SignalCard"></div>
+      </div>
+
+      <!-- 历史业绩 -->
+      <div class="section">
+        <div class="section-title">
+          历史业绩
+          <span class="section-subtitle" id="t0BacktestRange"></span>
+        </div>
+        <div class="metrics-grid" id="t0MetricsGrid"></div>
+      </div>
+
+      <!-- 逐年收益图 -->
+      <div class="section">
+        <div class="section-title">逐年收益（做T净利 vs 持有收益，50万基准）</div>
+        <div class="chart-container">
+          <canvas id="t0YearlyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 参数与纪律 -->
+      <div class="section">
+        <div class="section-title">参数与纪律</div>
+        <div id="t0Params"></div>
+      </div>
+    </div>
+    <!-- /t0Content -->
+    </div>
 
     <div class="footer">
       比值轮动交易决策辅助系统 · 数据更新时间：<span id="updateTime"></span><br>
@@ -639,9 +698,11 @@
   <script>
     let cybData = null;
     let kcbData = null;
+    let t0Data = null;
     let currentTab = 'cyb';
     let chartInstance = null;
     let returnChartInstance = null;
+    let t0ChartInstance = null;
 
     // 加载数据
     async function loadData() {
@@ -1157,6 +1218,114 @@
       renderDaily(data.recent_daily);
     }
 
+    // 渲染红利做T页签（515180 日内做T）
+    function renderT0(t0) {
+      if (!t0) return;
+      const bt = t0.backtest;
+      const sig = t0.signal;
+
+      // ===== 今日做T信号卡 =====
+      const sigDate = document.getElementById('t0SignalDate');
+      if (sig && sig.signal) {
+        sigDate.textContent = sig.date + ' ' + (sig.phase || '');
+        const s = sig.signal;
+        const statusCls = s.skip ? 'status-skip' : 'status-ready';
+        const statusText = s.skip ? '今日跳过（低开超2%）' : '今日可做T';
+        let html = `
+          <div class="t0-badge ${statusCls}">${statusText}</div>
+          <div class="t0-prices">
+            <div class="t0-price-box">
+              <div class="t0-price-label">买入监控价</div>
+              <div class="t0-price-value buy">${s.buy_p.toFixed(3)}</div>
+              <div class="t0-price-sub">开盘 × 0.996</div>
+            </div>
+            <div class="t0-arrow">→</div>
+            <div class="t0-price-box">
+              <div class="t0-price-label">卖出监控价</div>
+              <div class="t0-price-value sell">${s.sell_p.toFixed(3)}</div>
+              <div class="t0-price-sub">开盘 × 1.004</div>
+            </div>
+          </div>
+          <div class="t0-info">昨收 ${s.prev_close.toFixed(3)} | 今开 ${s.open.toFixed(3)}（${s.gap_pct >= 0 ? '+' : ''}${s.gap_pct}%）| 委托 ${s.shares.toLocaleString()} 股（约 ${(s.buy_amt / 10000).toFixed(1)} 万）</div>
+          ${s.skip ? '' : `<div class="t0-note">操作：条件单 → 日内先买后卖，先买=${s.buy_p.toFixed(3)} 后卖=${s.sell_p.toFixed(3)}，市价委托当日有效；14:50 若只买未卖 → 手动卖出等量当日了结</div>`}
+        `;
+        document.getElementById('t0SignalCard').innerHTML = html;
+      } else {
+        sigDate.textContent = '暂无今日信号';
+        document.getElementById('t0SignalCard').innerHTML = '<div class="t0-badge status-skip">今日信号未生成（每日9:25后自动更新）</div>';
+      }
+
+      // ===== 历史业绩 =====
+      if (bt) {
+        const s = bt.summary;
+        document.getElementById('t0BacktestRange').textContent = `回测 ${s.start_date} ~ ${s.end_date} · ${s.trading_days} 个交易日`;
+        const wan = v => (v / 10000).toFixed(1) + '万';
+        const items = [
+          { label: '做T净盈利', value: wan(s.net_profit), cls: s.net_profit >= 0 ? 'positive' : 'negative', sub: '扣佣后' },
+          { label: '持有收益(50万)', value: wan(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '傻拿不动基准' },
+          { label: '超额收益', value: wan(s.excess_profit), cls: s.excess_profit >= 0 ? 'positive' : 'negative', sub: 'vs 持有' },
+          { label: '成交笔数', value: s.total_trades + '笔', cls: '', sub: '手续费 ' + wan(s.commission) },
+          { label: '双边成交', value: s.both_days + '天', cls: '', sub: '仅买收盘恢复 ' + s.buy_only_days + ' 天' },
+          { label: '最差单日', value: wan(s.worst_day), cls: 'negative', sub: '暴跌日买入卖不掉' }
+        ];
+        document.getElementById('t0MetricsGrid').innerHTML = items.map(it => `
+          <div class="metric-card">
+            <div class="label">${it.label}</div>
+            <div class="value ${it.cls}">${it.value}</div>
+            <div class="sub">${it.sub}</div>
+          </div>
+        `).join('');
+
+        // ===== 逐年收益图 =====
+        const ctx = document.getElementById('t0YearlyChart');
+        if (ctx && typeof Chart !== 'undefined' && bt.yearly && bt.yearly.length > 0) {
+          if (t0ChartInstance) t0ChartInstance.destroy();
+          t0ChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: bt.yearly.map(y => y.year),
+              datasets: [
+                { label: '做T净利(万)', data: bt.yearly.map(y => +(y.net / 10000).toFixed(1)), backgroundColor: bt.yearly.map(y => y.net >= 0 ? 'rgba(231,76,60,0.85)' : 'rgba(39,174,96,0.85)'), borderRadius: 4 },
+                { label: '持有收益(万)', data: bt.yearly.map(y => +(y.hold_ret / 10000).toFixed(1)), backgroundColor: 'rgba(52,152,219,0.55)', borderRadius: 4 }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { labels: { color: '#2c3e50', font: { size: 11 } } } },
+              scales: {
+                x: { ticks: { color: '#7f8c8d' }, grid: { display: false } },
+                y: { ticks: { color: '#7f8c8d' }, grid: { color: 'rgba(0,0,0,0.05)' } }
+              }
+            }
+          });
+        }
+
+        // ===== 参数与纪律 =====
+        const p = bt.param;
+        document.getElementById('t0Params').innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>标的</td><td>${p.symbol}</td><td>${p.name}（易方达中证红利ETF）</td></tr>
+                <tr><td>买入系数</td><td>×${p.buy_k}</td><td>买入监控价 = 开盘价 × 0.996（跌0.4%触发）</td></tr>
+                <tr><td>卖出系数</td><td>×${p.sell_k}</td><td>卖出监控价 = 开盘价 × 1.004（涨0.4%触发）</td></tr>
+                <tr><td>委托仓位</td><td>${(p.capital / 10000).toFixed(0)}万</td><td>每日固定做T委托金额</td></tr>
+                <tr><td>佣金</td><td>万${p.commission_rate * 10000}</td><td>双边计费基准</td></tr>
+                <tr><td>跳过条件</td><td>低开超${p.skip_drop * 100}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
+                <tr><td>执行方式</td><td>先买后卖</td><td>条件单「日内先买后卖」，正T保护不卖底仓</td></tr>
+                <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 收盘价恢复，不过夜</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市（如2020）会跑输持有；佣金高低直接影响收益（间距±0.4%为22组合扫描最优）。实盘请先小仓位试跑2-4周。</div>
+        `;
+      } else {
+        document.getElementById('t0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
+      }
+    }
+
     // 页签切换
     function switchTab(tab) {
       if (tab === currentTab) return;
@@ -1166,6 +1335,19 @@
       // 销毁旧图表
       if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
       if (returnChartInstance) { returnChartInstance.destroy(); returnChartInstance = null; }
+      if (t0ChartInstance) { t0ChartInstance.destroy(); t0ChartInstance = null; }
+
+      const isT0 = tab === 't0';
+      document.getElementById('rotationContent').style.display = isT0 ? 'none' : 'block';
+      document.getElementById('t0Content').style.display = isT0 ? 'block' : 'none';
+
+      if (isT0) {
+        document.getElementById('headerTitle').textContent = '红利做T（515180 日内高抛低吸）';
+        document.getElementById('headerDesc').textContent = '基于已有底仓做T+0：跌0.4%自动买入，买入成交后涨0.4%自动卖出，当日了结不过夜；低开超2%当日跳过';
+        if (t0Data) renderT0(t0Data);
+        return;
+      }
+
       // 渲染新数据
       const data = tab === 'cyb' ? cybData : kcbData;
       if (data) {
@@ -1184,6 +1366,7 @@
 
         cybData = data;
         kcbData = data.kcb;
+        t0Data = data.t0;
         delete cybData.kcb;
 
         document.getElementById('loading').style.display = 'none';

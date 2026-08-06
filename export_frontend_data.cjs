@@ -7,6 +7,7 @@ const { config, getStrategyConfig, getKcbStrategyConfig } = require('./config.cj
 const { loadData } = require('./database.cjs');
 const { getCurrentStatus, calcPercentile } = require('./stats.cjs');
 const { getDistanceToNextAction } = require('./strategy.cjs');
+const { loadBacktestJson } = require('./t0_engine.cjs');
 
 // ============================================================
 // 分位数计算（线性插值法）
@@ -214,11 +215,29 @@ function exportFrontendData() {
   const kcbDims = (kcbData.daily_records && kcbData.daily_records.length > 0)
     ? buildFrontendDims(kcbData, config.kcb) : null;
 
+  // 做T策略数据（515180 红利ETF 日内做T）
+  // 回测结果（静态预计算）+ 当日信号（动态）
+  const t0Backtest = loadBacktestJson();
+  let t0Signal = null;
+  const t0SignalFile = path.join(config.dataDir, 't0', 't0_signal.json');
+  if (fs.existsSync(t0SignalFile)) {
+    try {
+      t0Signal = JSON.parse(fs.readFileSync(t0SignalFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取做T信号失败: ${e.message}`);
+    }
+  }
+  const t0Dims = {
+    backtest: t0Backtest,       // { summary, yearly, param }
+    signal: t0Signal            // { date, generated_at, phase, signal }
+  };
+
   // 组装输出
   const output = {
     generated_at: new Date().toISOString(),
     ...cybDims,
-    kcb: kcbDims
+    kcb: kcbDims,
+    t0: t0Dims
   };
 
   // 写入文件
@@ -237,6 +256,13 @@ function exportFrontendData() {
     console.log(`  科创50: 年化${kcbDims.total_metrics.annual_ret}%`);
   } else {
     console.log(`  科创50: 无数据（需运行 init-history-kcb）`);
+  }
+  if (t0Backtest) {
+    console.log(`  做T: 净盈利${(t0Backtest.summary.net_profit / 10000).toFixed(1)}万, 超额${(t0Backtest.summary.excess_profit / 10000).toFixed(1)}万`);
+  }
+  if (t0Signal && t0Signal.signal) {
+    const s = t0Signal.signal;
+    console.log(`  做T信号(${t0Signal.date}): ${s.skip ? '跳过' : `买${s.buy_p} 卖${s.sell_p} ${s.shares}股`}`);
   }
 
   return { success: true, outputPath, output };

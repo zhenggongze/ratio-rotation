@@ -35,7 +35,9 @@ const DATA_FILES = [
   'ratio_rotation_data.json',
   'kcb_rotation_data.json',
   'history_data.json',
-  'hli_dividend_rates.json'
+  'hli_dividend_rates.json',
+  't0/t0_backtest.json',
+  't0/t0_signal.json'
 ];
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -83,8 +85,9 @@ async function download() {
       fs.writeFileSync(localPath, result.content);
       // 解析验证
       const json = JSON.parse(result.content.toString());
-      const records = (json.daily_records || []).length;
-      console.log(`  ✓ ${fname} (${records} 条记录)`);
+      const recCount = (json.daily_records || []).length;
+      const label = recCount > 0 ? `${recCount} 条记录` : `${result.content.length} 字节`;
+      console.log(`  ✓ ${fname} (${label})`);
       downloaded++;
     } catch (e) {
       if (e.code === 'NoSuchKey' || e.status === 404) {
@@ -129,8 +132,9 @@ async function upload() {
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
       });
       const json = JSON.parse(content.toString());
-      const records = (json.daily_records || []).length;
-      console.log(`  ✓ ${fname} (${records} 条记录, ${content.length} 字节)`);
+      const recCount = (json.daily_records || []).length;
+      const label = recCount > 0 ? `${recCount} 条记录` : `${content.length} 字节`;
+      console.log(`  ✓ ${fname} (${label})`);
       uploaded++;
     } catch (e) {
       console.log(`  ✗ ${fname} 上传失败: ${e.message}`);
