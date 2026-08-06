@@ -551,6 +551,7 @@
     .t0-status-tag.gray { background: rgba(149, 165, 166, 0.12); color: var(--text-light); }
     .t0-daily-stats { margin-top: 8px; font-size: 12px; color: var(--text-light); }
     .t0-daily-stats b { color: var(--pos); font-weight: 600; }
+    .t0-daily-subtitle { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--text); }
 
     /* ===== 仓位卡片 ===== */
     .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
@@ -687,6 +688,7 @@
           每日记录
           <span class="section-subtitle" id="t0DailyMeta"></span>
         </div>
+        <div class="metrics-grid" id="t0DailyCards"></div>
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -719,6 +721,30 @@
           <span class="section-subtitle" id="t0BacktestRange"></span>
         </div>
         <div class="metrics-grid" id="t0MetricsGrid"></div>
+
+        <!-- 历史业绩：每日明细（全周期回测） -->
+        <div class="t0-daily-subtitle" id="t0HistoryDailyMeta"></div>
+        <div class="table-wrap t0-daily-wrap">
+          <table class="t0-daily-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>状态</th>
+                <th>昨收</th>
+                <th>开盘</th>
+                <th>买入价</th>
+                <th>卖出价</th>
+                <th>成交</th>
+                <th>收盘</th>
+                <th>净盈亏</th>
+                <th>手续费</th>
+                <th>笔数</th>
+                <th>累计净利</th>
+              </tr>
+            </thead>
+            <tbody id="t0HistoryDailyBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 逐年收益图 -->
@@ -1376,32 +1402,13 @@
 
       // ===== 每日记录（自今日起，16:00 收盘后自动更新） =====
       renderT0Daily(t0.daily);
+      // ===== 历史业绩：全周期每日明细 =====
+      renderT0HistoryDaily(bt);
     }
 
-    // 渲染每日记录表
-    function renderT0Daily(daily) {
-      const meta = document.getElementById('t0DailyMeta');
-      const body = document.getElementById('t0DailyBody');
-      if (!body) return;
-      if (!daily || !daily.records || daily.records.length === 0) {
-        if (meta) meta.textContent = '';
-        const statsEl = document.getElementById('t0DailyStats');
-        if (statsEl) statsEl.textContent = '';
-        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
-        return;
-      }
-      if (meta) meta.textContent = '更新于 ' + (daily.updated_at || '');
-      // 汇总统计（占累计记录天数比例）
-      const total = daily.records.length;
-      const cnt = s => daily.records.filter(r => r.status === s).length;
-      const pct = n => (n / total * 100).toFixed(1) + '%';
-      const statsEl = document.getElementById('t0DailyStats');
-      if (statsEl) {
-        const both = cnt('双边成交'), recover = cnt('仅买收盘恢复'), skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
-        statsEl.innerHTML = `累计 ${total} 个交易日 · 双边成交 <b>${both}</b> 天（${pct(both)}）· 仅买收盘恢复 ${recover} 天（${pct(recover)}）· 未触发 ${untrig} 天 · 跳过 ${skip} 天${pend ? ` · 待收盘 ${pend} 天` : ''}`;
-      }
-      const rows = [...daily.records].reverse(); // 最新在上
-      body.innerHTML = rows.map(r => {
+    // 生成每日明细行 HTML（每日记录与历史每日明细共用）
+    function buildT0RowsHTML(records) {
+      return records.map(r => {
         const statusCls = r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || r.status === '仅买收盘恢复') ? 'warn' : 'gray';
         const trade = r.buy_filled === null ? '待'
@@ -1424,6 +1431,67 @@
           <td class="${cumCls}">${fmt(r.cum_net)}</td>
         </tr>`;
       }).join('');
+    }
+
+    // 渲染每日记录（自今日起）
+    function renderT0Daily(daily) {
+      const meta = document.getElementById('t0DailyMeta');
+      const body = document.getElementById('t0DailyBody');
+      const cards = document.getElementById('t0DailyCards');
+      const statsEl = document.getElementById('t0DailyStats');
+      if (!body) return;
+      if (!daily || !daily.records || daily.records.length === 0) {
+        if (meta) meta.textContent = '';
+        if (statsEl) statsEl.textContent = '';
+        if (cards) cards.innerHTML = '';
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
+        return;
+      }
+      if (meta) meta.textContent = '更新于 ' + (daily.updated_at || '');
+      const records = daily.records;
+      const total = records.length;
+      const cnt = s => records.filter(r => r.status === s).length;
+      const pct = n => (n / total * 100).toFixed(1) + '%';
+      const both = cnt('双边成交'), recover = cnt('仅买收盘恢复'), skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
+      const sumNet = records.filter(r => typeof r.net === 'number').reduce((a, r) => a + r.net, 0);
+
+      // 顶部统计卡（与历史业绩同风格）
+      if (cards) {
+        const cardItems = [
+          { label: '自今日起累计净利', value: (sumNet / 10000).toFixed(2) + '万', cls: sumNet >= 0 ? 'positive' : 'negative', sub: '仅已确定记录' },
+          { label: '累计交易日', value: total + '天', cls: '', sub: '自今日起统计' },
+          { label: '双边成交', value: both + '天', cls: '', sub: '占' + pct(both) },
+          { label: '仅买收盘恢复', value: recover + '天', cls: '', sub: '占' + pct(recover) },
+          { label: '未触发', value: untrig + '天', cls: '', sub: '占' + pct(untrig) },
+          { label: '待收盘', value: pend + '天', cls: '', sub: '盘中未定' }
+        ];
+        cards.innerHTML = cardItems.map(it => `
+          <div class="metric-card">
+            <div class="label">${it.label}</div>
+            <div class="value ${it.cls}">${it.value}</div>
+            <div class="sub">${it.sub}</div>
+          </div>
+        `).join('');
+      }
+      // 统计行
+      if (statsEl) {
+        statsEl.innerHTML = `累计 ${total} 个交易日 · 双边成交 <b>${both}</b> 天（${pct(both)}）· 仅买收盘恢复 ${recover} 天（${pct(recover)}）· 未触发 ${untrig} 天 · 跳过 ${skip} 天${pend ? ` · 待收盘 ${pend} 天` : ''}`;
+      }
+      body.innerHTML = buildT0RowsHTML([...records].reverse()); // 最新在上
+    }
+
+    // 渲染历史业绩全周期每日明细
+    function renderT0HistoryDaily(bt) {
+      const meta = document.getElementById('t0HistoryDailyMeta');
+      const body = document.getElementById('t0HistoryDailyBody');
+      if (!body) return;
+      if (!bt || !bt.daily || bt.daily.length === 0) {
+        if (meta) meta.textContent = '';
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">每日明细未生成（重新生成回测后更新）</td></tr>';
+        return;
+      }
+      if (meta) meta.textContent = `全周期每日明细：${bt.summary.start_date} ~ ${bt.summary.end_date} · 共 ${bt.daily.length} 天（倒序展示）`;
+      body.innerHTML = buildT0RowsHTML([...bt.daily].reverse());
     }
 
     // 页签切换

@@ -74,6 +74,7 @@ function runT0Backtest(rows, opts) {
   const roundBuyFn = opts.roundBuyFn || opts.roundFn || floorN;
   const roundSellFn = opts.roundSellFn || opts.roundFn || floorN;
   const N = rows.length;
+  const daily = [];
 
   let totalGross = 0, totalComm = 0, totalTrades = 0;
   let buyOnlyDays = 0, bothDays = 0, trigDays = 0, skipDays = 0;
@@ -89,6 +90,7 @@ function runT0Backtest(rows, opts) {
 
     let dayGross = 0, dayComm = 0, dayTrades = 0;
     let buyOnly = false, both = false, trig = false;
+    let lastBuyP = 0, lastSellP = 0, lastShares = 0;
 
     if (!skip) {
       for (const tier of tiers) {
@@ -96,6 +98,7 @@ function runT0Backtest(rows, opts) {
         const sellP = roundSellFn(open * tier.sellK, T0_CONFIG.PRICE_DECIMAL);
         let shares = Math.floor(tier.capital / open / 100) * 100;
         if (shares === 0) shares = 100;
+        lastBuyP = buyP; lastSellP = sellP; lastShares = shares;
         const buyFilled = low <= buyP;
         const sellFilled = high >= sellP;
         if (!buyFilled) continue;
@@ -126,6 +129,24 @@ function runT0Backtest(rows, opts) {
     if (both) bothDays++;
     if (trig) trigDays++;
     totalGross += dayGross; totalComm += dayComm; totalTrades += dayTrades;
+
+    // 每日明细（与 computeT0Daily 同构，供历史业绩"每日明细"表展示）
+    daily.push({
+      date: row.date,
+      status: skip ? '跳过' : (both ? '双边成交' : (buyOnly ? '仅买收盘恢复' : '未触发')),
+      prev_close: Math.round(prevClose * 1000) / 1000,
+      open: Math.round(open * 1000) / 1000,
+      buy_p: skip ? roundBuyFn(open * tiers[0].buyK, T0_CONFIG.PRICE_DECIMAL) : lastBuyP,
+      sell_p: skip ? roundSellFn(open * tiers[0].sellK, T0_CONFIG.PRICE_DECIMAL) : lastSellP,
+      buy_filled: skip ? false : (trig ? low <= lastBuyP : false),
+      sell_filled: both,
+      close: Math.round(close * 1000) / 1000,
+      gross: Math.round(dayGross * 100) / 100,
+      commission: Math.round(dayComm * 100) / 100,
+      trades: dayTrades,
+      net: Math.round(net * 100) / 100,
+      cum_net: Math.round(cumProfit * 100) / 100
+    });
 
     // 年度聚合
     const y = row.date.slice(0, 4);
@@ -174,6 +195,7 @@ function runT0Backtest(rows, opts) {
       end_date: rows[N - 1].date
     },
     yearly: yearly,
+    daily: daily,
     param: {
       buy_k: T0_CONFIG.BUY_K,
       sell_k: T0_CONFIG.SELL_K,

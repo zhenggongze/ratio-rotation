@@ -48,12 +48,18 @@ with sync_playwright() as p:
     daily_meta = page.evaluate("() => { const el = document.getElementById('t0DailyMeta'); return el ? el.textContent : null; }")
     daily_rows = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyBody tr')).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
     daily_stats = page.evaluate("() => { const el = document.getElementById('t0DailyStats'); return el ? el.innerText : null; }")
+    daily_cards = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyCards .metric-card')).map(c => (c.innerText || '').replace(/\\s+/g, ' ').trim())")
+    history_rows = page.evaluate("() => { const b = document.getElementById('t0HistoryDailyBody'); return b ? b.children.length : 0; }")
+    history_meta = page.evaluate("() => { const el = document.getElementById('t0HistoryDailyMeta'); return el ? el.textContent : null; }")
     print("\n=== 每日记录 ===")
     print("更新时间:", daily_meta)
     print("行数:", len(daily_rows))
     for r in daily_rows[:3]:
         print("  -", r)
+    print("统计卡:", daily_cards)
     print("统计行:", daily_stats)
+    print("历史明细行数:", history_rows)
+    print("历史明细标题:", history_meta)
     daily_check = bool(re.search(r"更新于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", daily_meta or ""))
     print("更新时间含秒级:", daily_check)
 
@@ -75,6 +81,8 @@ with sync_playwright() as p:
         ("每日记录含今日行", any("2026-08-06" in r for r in daily_rows)),
         ("历史业绩双边成交占比", both_pct_ok),
         ("每日记录统计占比", daily_stats_ok),
+        ("每日记录统计卡", len(daily_cards) >= 4),
+        ("历史业绩每日明细表", history_rows >= 1600),
     ]
     print("\n=== 断言 ===")
     for name, ok in checks:
