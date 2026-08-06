@@ -91,7 +91,6 @@ function formatSignalText(sig) {
   L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
   L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}）`);
   L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}）`);
-  L.push(`委托${sig.shares.toLocaleString()}股 约${(sig.buy_amt / 10000).toFixed(1)}万元`);
   L.push(`操作：条件单→日内先买后卖，市价委托当日有效`);
   L.push(`14:50若只买未卖→手动卖出等量当日了结`);
   return L.join('\n');
