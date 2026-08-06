@@ -1,10 +1,11 @@
 // 做T策略引擎模块（Node.js 移植版）
-// 移植自 t0-strategy 项目（TRAE Work），口径与 Python engine.py 完全一致：
+// 基于 t0-strategy 项目（TRAE Work）策略口径，含本地化改进：
 // - 50万固定做T仓位，当日了结，次日恢复50万，盈亏累计不滚入
 // - 佣金万1双边
 // - 低开>2%当日跳过
 // - 仅买入未卖出 → 当日收盘价恢复（卖出等量底仓）
-// - 委托价 = round(开盘价 x 系数, 3)，三位小数与实盘一致
+// - 委托价 = 开盘价 x 系数 向下取整到 3 位小数（实盘最小变动价位 0.001；
+//   向下取整挂单更低一档：买入过滤虚假触发、卖出更易成交，回测验证 4 组配对全胜）
 const fs = require('fs');
 const path = require('path');
 
@@ -25,17 +26,12 @@ const T0_CONFIG = {
 };
 
 // ============================================================
-// Python round 实现（银行家舍入：恰好0.5时取偶数）
-// 与 Python 内置 round 行为一致，确保回测数字与 Python 版吻合
+// 向下取整到 n 位小数（实盘挂单最小变动价位 0.001）
+// 相比四舍五入/银行家舍入：挂单价更低一档 → 买入过滤虚假触发、卖出更易成交
 // ============================================================
-function pyRound(value, ndigits) {
+function floorN(value, ndigits) {
   const factor = 10 ** ndigits;
-  const scaled = value * factor;
-  const floor = Math.floor(scaled);
-  const diff = scaled - floor;
-  if (diff < 0.5) return floor / factor;
-  if (diff > 0.5) return (floor + 1) / factor;
-  return (floor % 2 === 0 ? floor : floor + 1) / factor;
+  return Math.floor(value * factor) / factor;
 }
 
 // ============================================================
@@ -74,6 +70,9 @@ function runT0Backtest(rows, opts) {
   const tiers = opts.tiers || [{ buyK: T0_CONFIG.BUY_K, sellK: T0_CONFIG.SELL_K, capital: T0_CONFIG.CAPITAL }];
   const commissionRate = opts.commissionRate !== undefined ? opts.commissionRate : T0_CONFIG.COMMISSION_RATE;
   const skipDrop = opts.skipDrop !== undefined ? opts.skipDrop : T0_CONFIG.SKIP_DROP;
+  // 舍入函数（默认向下取整，与实盘挂单口径一致；评估其他策略时可注入 floor/ceil，买卖可分别指定）
+  const roundBuyFn = opts.roundBuyFn || opts.roundFn || floorN;
+  const roundSellFn = opts.roundSellFn || opts.roundFn || floorN;
   const N = rows.length;
 
   let totalGross = 0, totalComm = 0, totalTrades = 0;
@@ -93,8 +92,8 @@ function runT0Backtest(rows, opts) {
 
     if (!skip) {
       for (const tier of tiers) {
-        const buyP = pyRound(open * tier.buyK, T0_CONFIG.PRICE_DECIMAL);
-        const sellP = pyRound(open * tier.sellK, T0_CONFIG.PRICE_DECIMAL);
+        const buyP = roundBuyFn(open * tier.buyK, T0_CONFIG.PRICE_DECIMAL);
+        const sellP = roundSellFn(open * tier.sellK, T0_CONFIG.PRICE_DECIMAL);
         let shares = Math.floor(tier.capital / open / 100) * 100;
         if (shares === 0) shares = 100;
         const buyFilled = low <= buyP;
@@ -196,8 +195,8 @@ function computeT0Signal(openPrice, prevClose) {
   if (!openPrice || openPrice <= 0 || !prevClose || prevClose <= 0) {
     return { error: '行情数据无效' };
   }
-  const buyP = pyRound(openPrice * T0_CONFIG.BUY_K, T0_CONFIG.PRICE_DECIMAL);
-  const sellP = pyRound(openPrice * T0_CONFIG.SELL_K, T0_CONFIG.PRICE_DECIMAL);
+  const buyP = floorN(openPrice * T0_CONFIG.BUY_K, T0_CONFIG.PRICE_DECIMAL);
+  const sellP = floorN(openPrice * T0_CONFIG.SELL_K, T0_CONFIG.PRICE_DECIMAL);
   let shares = Math.floor(T0_CONFIG.CAPITAL / openPrice / 100) * 100;
   if (shares === 0) shares = 100;
   const gapPct = Math.round((openPrice / prevClose - 1) * 10000) / 100;
@@ -253,5 +252,5 @@ module.exports = {
   computeT0Signal,
   buildBacktestJson,
   loadBacktestJson,
-  pyRound
+  floorN
 };

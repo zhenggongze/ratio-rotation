@@ -1,95 +1,95 @@
 {
-  "generated_at": "2026-08-06T02:22:19.381Z",
+  "generated_at": "2026-08-06T04:23:00.072Z",
   "summary": {
     "trading_days": 1604,
     "skip_days": 9,
-    "total_trades": 2168,
-    "gross_profit": 1301644.2,
-    "commission": 108090.35,
-    "net_profit": 1193553.85,
+    "total_trades": 2050,
+    "gross_profit": 1378641.1,
+    "commission": 102163.74,
+    "net_profit": 1276477.36,
     "hold_profit": 545454.55,
-    "excess_profit": 648099.3,
-    "both_days": 591,
-    "buy_only_days": 493,
-    "trig_days": 1084,
-    "trigger_rate": 67.6,
+    "excess_profit": 731022.81,
+    "both_days": 577,
+    "buy_only_days": 448,
+    "trig_days": 1025,
+    "trigger_rate": 63.9,
     "worst_day": -32823.82,
-    "best_day": 4700,
+    "best_day": 4541.77,
     "start_date": "2019-12-20",
     "end_date": "2026-08-04"
   },
   "yearly": [
     {
       "year": "2019",
-      "net": 7603.91,
-      "gross": 8202,
-      "comm": 598.09,
+      "net": 15080.16,
+      "gross": 15679,
+      "comm": 598.84,
       "trades": 12,
       "hold_ret": 11177.35,
-      "excess": -3573.44
+      "excess": 3902.81
     },
     {
       "year": "2020",
-      "net": 87333.93,
-      "gross": 104874.3,
-      "comm": 17540.37,
-      "trades": 352,
+      "net": 147457.84,
+      "gross": 164790.5,
+      "comm": 17332.66,
+      "trades": 348,
       "hold_ret": 96516.69,
-      "excess": -9182.76
+      "excess": 50941.15
     },
     {
       "year": "2021",
-      "net": 202085.89,
-      "gross": 219336.9,
-      "comm": 17251.01,
-      "trades": 346,
+      "net": 217943.31,
+      "gross": 234888.8,
+      "comm": 16945.49,
+      "trades": 340,
       "hold_ret": 133819.95,
-      "excess": 68265.94
+      "excess": 84123.36
     },
     {
       "year": "2022",
-      "net": 137217.09,
-      "gross": 155460.3,
-      "comm": 18243.21,
-      "trades": 366,
+      "net": 128154.7,
+      "gross": 144391.1,
+      "comm": 16236.4,
+      "trades": 326,
       "hold_ret": -7183.91,
-      "excess": 144401
+      "excess": 135338.61
     },
     {
       "year": "2023",
-      "net": 236230.17,
-      "gross": 252688.9,
-      "comm": 16458.73,
-      "trades": 330,
+      "net": 262917.32,
+      "gross": 278672.9,
+      "comm": 15755.58,
+      "trades": 316,
       "hold_ret": 34046.69,
-      "excess": 202183.48
+      "excess": 228870.63
     },
     {
       "year": "2024",
-      "net": 246788.91,
-      "gross": 262649.7,
-      "comm": 15860.79,
-      "trades": 318,
+      "net": 249040.34,
+      "gross": 264099,
+      "comm": 15058.66,
+      "trades": 302,
       "hold_ret": 101185.05,
-      "excess": 145603.86
+      "excess": 147855.29
     },
     {
       "year": "2025",
-      "net": 150906.6,
-      "gross": 164069.5,
-      "comm": 13162.9,
-      "trades": 264,
+      "net": 143566.49,
+      "gross": 155128.6,
+      "comm": 11562.11,
+      "trades": 232,
       "hold_ret": 20090.98,
-      "excess": 130815.62
+      "excess": 123475.51
     },
     {
       "year": "2026",
-      "net": 125387.36,
-      "gross": 134362.6,
-      "comm": 8975.24,
-      "trades": 180,
+      "net": 112317.2,
+      "gross": 120991.2,
+      "comm": 8674,
+      "trades": 174,
       "hold_ret": 11297.38,
-      "excess": 114089.98
+      "excess": 101019.82
     }
   ],
   "param": {
