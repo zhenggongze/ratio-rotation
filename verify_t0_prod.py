@@ -71,7 +71,7 @@ with sync_playwright() as p:
     print("\n双边成交卡:", both_card)
     both_pct_ok = bool(re.search(r"双边成交\s*577天.*占\d+\.\d%", both_card.replace("\u00a0", "")))
     print("双边成交占比标注:", both_pct_ok)
-    daily_stats_ok = bool(re.search(r"双边成交 \d+天（\d+\.\d%）.*仅买收盘恢复 \d+天（\d+\.\d%）", daily_stats or ""))
+    daily_stats_ok = bool(re.search(r"双边成交 \d+天（\d+\.\d%）[\s\S]*仅买收盘恢复 \d+天（\d+\.\d%）", daily_stats or ""))
     print("每日记录统计占比:", daily_stats_ok)
     status_dist_ok = bool(re.search(r"未触发买入.*低开跳过.*合计 1604 天 = 100%", status_dist or ""))
     print("历史状态分布(未触发/跳过/合计100%):", status_dist_ok)
