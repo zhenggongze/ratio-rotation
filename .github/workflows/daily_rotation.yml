@@ -51,7 +51,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 下载历史数据（从 OSS 恢复状态）
-        if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
+        # 无条件执行：即使幂等跳过也需下载 t0 信号等数据，避免部署前端时覆盖含 t0 的 frontend_data.json
         run: |
           node workflow_logger.cjs --record "下载数据" "running"
           node oss_data_sync.cjs download
