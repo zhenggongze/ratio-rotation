@@ -216,6 +216,66 @@ function computeT0Signal(openPrice, prevClose) {
 }
 
 // ============================================================
+// 计算单日做T记录（【每日记录】模块用，成交/盈亏口径与 runT0Backtest 完全一致）
+// 输入: { date, open, prevClose, high, low, close }
+// 状态: 跳过 / 待收盘(北京时间15:30前) / 未触发 / 双边成交 / 仅买收盘恢复
+// ============================================================
+function computeT0Daily({ date, open, prevClose, high, low, close }) {
+  const base = {
+    date,
+    prev_close: Math.round(prevClose * 1000) / 1000,
+    open: Math.round(open * 1000) / 1000,
+    buy_p: floorN(open * T0_CONFIG.BUY_K, T0_CONFIG.PRICE_DECIMAL),
+    sell_p: floorN(open * T0_CONFIG.SELL_K, T0_CONFIG.PRICE_DECIMAL),
+    close: Math.round(close * 1000) / 1000
+  };
+  const gapPct = Math.round((open / prevClose - 1) * 10000) / 100;
+  base.gap_pct = gapPct;
+
+  // 低开超2%当日跳过（与回测 skipDrop 一致）
+  if (open < prevClose * (1 - T0_CONFIG.SKIP_DROP)) {
+    return { ...base, status: '跳过', reason: `低开${Math.abs(gapPct)}%超2%`, shares: 0, buy_filled: false, sell_filled: false, gross: 0, commission: 0, trades: 0, net: 0 };
+  }
+
+  let shares = Math.floor(T0_CONFIG.CAPITAL / open / 100) * 100;
+  if (shares === 0) shares = 100;
+  base.shares = shares;
+  const buyFilled = low <= base.buy_p;
+  const sellFilled = high >= base.sell_p;
+
+  // 北京时间 15:30 前为盘中，当日 K 线未定，标记待收盘
+  const beijingNow = new Date(Date.now() + 8 * 3600 * 1000);
+  const hm = beijingNow.getUTCHours() * 60 + beijingNow.getUTCMinutes();
+  if (hm < 15 * 60 + 30) {
+    return { ...base, status: '待收盘', buy_filled: null, sell_filled: null, gross: null, commission: null, trades: null, net: null };
+  }
+
+  if (!buyFilled) {
+    return { ...base, status: '未触发', buy_filled: false, sell_filled: false, gross: 0, commission: 0, trades: 0, net: 0 };
+  }
+
+  let gross, commission, trades = 1;
+  commission = base.buy_p * shares * T0_CONFIG.COMMISSION_RATE;
+  if (sellFilled) {
+    commission += base.sell_p * shares * T0_CONFIG.COMMISSION_RATE;
+    trades = 2;
+    gross = (base.sell_p - base.buy_p) * shares;
+  } else {
+    commission += close * shares * T0_CONFIG.COMMISSION_RATE;
+    trades = 2;
+    gross = (close - base.buy_p) * shares;
+  }
+  return {
+    ...base, status: sellFilled ? '双边成交' : '仅买收盘恢复',
+    buy_filled: buyFilled, sell_filled: sellFilled,
+    gross: Math.round(gross * 100) / 100,
+    commission: Math.round(commission * 100) / 100,
+    trades,
+    net: Math.round((gross - commission) * 100) / 100
+  };
+}
+
+// ============================================================
 // 预计算回测结果并保存 t0_backtest.json（供前端展示）
 // ============================================================
 function buildBacktestJson() {
@@ -250,6 +310,7 @@ module.exports = {
   loadT0History,
   runT0Backtest,
   computeT0Signal,
+  computeT0Daily,
   buildBacktestJson,
   loadBacktestJson,
   floorN

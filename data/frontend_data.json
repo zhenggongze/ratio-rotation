@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06T04:23:42.078Z",
+  "generated_at": "2026-08-06T05:20:37.230Z",
   "strategy_config": {
     "param_version": "20tier-hysteresis-v2",
     "effective_from": "2014-07-01",
@@ -5032,6 +5032,30 @@
         "low": 1.395,
         "quote_time": "20260806120541"
       }
+    },
+    "daily": {
+      "updated_at": "2026-08-06 13:20:30",
+      "count": 1,
+      "records": [
+        {
+          "date": "2026-08-06",
+          "prev_close": 1.399,
+          "open": 1.398,
+          "buy_p": 1.392,
+          "sell_p": 1.403,
+          "close": 1.401,
+          "gap_pct": -0.07,
+          "shares": 357600,
+          "status": "待收盘",
+          "buy_filled": null,
+          "sell_filled": null,
+          "gross": null,
+          "commission": null,
+          "trades": null,
+          "net": null,
+          "cum_net": null
+        }
+      ]
     }
   }
 }

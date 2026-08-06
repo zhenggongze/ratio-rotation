@@ -535,6 +535,21 @@
     .t0-note { margin-top: 12px; padding: 10px 12px; background: #f8f9fb; border-left: 3px solid var(--yellow); border-radius: 4px; font-size: 12px; color: var(--text-light); line-height: 1.6; }
     .t0-note strong { color: var(--text); }
 
+    /* ===== 每日记录表格 ===== */
+    .t0-daily-wrap { max-height: 420px; overflow-y: auto; }
+    .t0-daily-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .t0-daily-table th, .t0-daily-table td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+    .t0-daily-table th { position: sticky; top: 0; background: #f0f3f8; color: var(--text-light); font-weight: 600; z-index: 1; }
+    .t0-daily-table th:first-child, .t0-daily-table td:first-child, .t0-daily-table th:nth-child(2), .t0-daily-table td:nth-child(2) { text-align: left; }
+    .t0-daily-table tr:hover td { background: rgba(52, 152, 219, 0.04); }
+    .t0-daily-table td.pl { color: var(--pos); }
+    .t0-daily-table td.mn { color: var(--neg); }
+    .t0-daily-table td.gray { color: var(--text-lighter); }
+    .t0-status-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .t0-status-tag.ok { background: rgba(231, 76, 60, 0.1); color: var(--pos); }
+    .t0-status-tag.warn { background: rgba(243, 156, 18, 0.12); color: #b9770e; }
+    .t0-status-tag.gray { background: rgba(149, 165, 166, 0.12); color: var(--text-light); }
+
     /* ===== 仓位卡片 ===== */
     .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
     .pos-card { padding: 12px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; transition: all 0.2s; }
@@ -662,6 +677,36 @@
           <span class="section-subtitle" id="t0SignalDate"></span>
         </div>
         <div id="t0SignalCard"></div>
+      </div>
+
+      <!-- 每日记录（统计周期自今日起，每日16:00收盘后自动更新） -->
+      <div class="section">
+        <div class="section-title">
+          每日记录
+          <span class="section-subtitle" id="t0DailyMeta"></span>
+        </div>
+        <div class="table-wrap t0-daily-wrap">
+          <table class="t0-daily-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>状态</th>
+                <th>昨收</th>
+                <th>开盘</th>
+                <th>买入价</th>
+                <th>卖出价</th>
+                <th>成交</th>
+                <th>收盘</th>
+                <th>净盈亏</th>
+                <th>手续费</th>
+                <th>笔数</th>
+                <th>累计净利</th>
+              </tr>
+            </thead>
+            <tbody id="t0DailyBody"></tbody>
+          </table>
+        </div>
+        <div class="ratio-ruler-note">每日记录从今日起统计，每个交易日 16:00 收盘后自动追加当日记录（当日 K 线完整后成交与盈亏才确定；15:30 前为"待收盘"）。</div>
       </div>
 
       <!-- 历史业绩 -->
@@ -1325,6 +1370,46 @@
       } else {
         document.getElementById('t0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
       }
+
+      // ===== 每日记录（自今日起，16:00 收盘后自动更新） =====
+      renderT0Daily(t0.daily);
+    }
+
+    // 渲染每日记录表
+    function renderT0Daily(daily) {
+      const meta = document.getElementById('t0DailyMeta');
+      const body = document.getElementById('t0DailyBody');
+      if (!body) return;
+      if (!daily || !daily.records || daily.records.length === 0) {
+        if (meta) meta.textContent = '';
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
+        return;
+      }
+      if (meta) meta.textContent = '更新于 ' + (daily.updated_at || '');
+      const rows = [...daily.records].reverse(); // 最新在上
+      body.innerHTML = rows.map(r => {
+        const statusCls = r.status === '双边成交' ? 'ok'
+          : (r.status === '跳过' || r.status === '仅买收盘恢复') ? 'warn' : 'gray';
+        const trade = r.buy_filled === null ? '待'
+          : (r.buy_filled ? '✓' : '—') + (r.sell_filled ? '✓' : '—');
+        const fmt = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(2);
+        const netCls = r.net === null ? 'gray' : (r.net >= 0 ? 'pl' : 'mn');
+        const cumCls = r.cum_net === null ? 'gray' : (r.cum_net >= 0 ? 'pl' : 'mn');
+        return `<tr>
+          <td>${r.date}</td>
+          <td><span class="t0-status-tag ${statusCls}">${r.status}</span></td>
+          <td>${Number(r.prev_close).toFixed(3)}</td>
+          <td>${Number(r.open).toFixed(3)}</td>
+          <td>${Number(r.buy_p).toFixed(3)}</td>
+          <td>${Number(r.sell_p).toFixed(3)}</td>
+          <td>${trade}</td>
+          <td>${r.close ? Number(r.close).toFixed(3) : '—'}</td>
+          <td class="${netCls}">${fmt(r.net)}</td>
+          <td class="gray">${fmt(r.commission)}</td>
+          <td>${r.trades == null ? '—' : r.trades}</td>
+          <td class="${cumCls}">${fmt(r.cum_net)}</td>
+        </tr>`;
+      }).join('');
     }
 
     // 页签切换

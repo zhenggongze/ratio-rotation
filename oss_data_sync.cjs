@@ -37,7 +37,8 @@ const DATA_FILES = [
   'history_data.json',
   'hli_dividend_rates.json',
   't0/t0_backtest.json',
-  't0/t0_signal.json'
+  't0/t0_signal.json',
+  't0/t0_daily.json'
 ];
 
 const DATA_DIR = path.join(__dirname, 'data');

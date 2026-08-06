@@ -227,9 +227,19 @@ function exportFrontendData() {
       console.log(`  ⚠ 读取做T信号失败: ${e.message}`);
     }
   }
+  let t0Daily = null;
+  const t0DailyFile = path.join(config.dataDir, 't0', 't0_daily.json');
+  if (fs.existsSync(t0DailyFile)) {
+    try {
+      t0Daily = JSON.parse(fs.readFileSync(t0DailyFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取做T每日记录失败: ${e.message}`);
+    }
+  }
   const t0Dims = {
     backtest: t0Backtest,       // { summary, yearly, param }
-    signal: t0Signal            // { date, generated_at, phase, signal }
+    signal: t0Signal,           // { date, generated_at, phase, signal }
+    daily: t0Daily              // { updated_at, count, records: [...] }
   };
 
   // 组装输出
