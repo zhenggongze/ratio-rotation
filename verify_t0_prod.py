@@ -44,12 +44,25 @@ with sync_playwright() as p:
     range_ = page.evaluate("() => document.getElementById('t0BacktestRange').textContent")
     print("\n回测区间:", range_)
 
-    full = sig + " " + " ".join(metrics)
+    # ===== 每日记录模块 =====
+    daily_meta = page.evaluate("() => { const el = document.getElementById('t0DailyMeta'); return el ? el.textContent : null; }")
+    daily_rows = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyBody tr')).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
+    print("\n=== 每日记录 ===")
+    print("更新时间:", daily_meta)
+    print("行数:", len(daily_rows))
+    for r in daily_rows[:3]:
+        print("  -", r)
+    daily_check = bool(re.search(r"更新于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", daily_meta or ""))
+    print("更新时间含秒级:", daily_check)
+
+    full = sig + " " + " ".join(metrics) + " " + (daily_meta or "") + " " + " ".join(daily_rows)
     checks = [
         ("卖出监控价 1.403（向下取整）", "1.403" in sig),
         ("买入监控价 1.392", "1.392" in sig),
         ("净盈利 127.6万（新口径）", bool(re.search(r"127[.,]6|1,276,477|1276477", full))),
         ("超额 73.1万", bool(re.search(r"73[.,]1|731,022|731022", full))),
+        ("每日记录更新时间（秒级）", daily_check),
+        ("每日记录含今日行", any("2026-08-06" in r for r in daily_rows)),
     ]
     print("\n=== 断言 ===")
     for name, ok in checks:
