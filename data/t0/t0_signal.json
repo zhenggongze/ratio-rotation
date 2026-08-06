@@ -1,6 +1,6 @@
 {
   "date": "2026-08-06",
-  "generated_at": "2026-08-06T02:22:45.902Z",
+  "generated_at": "2026-08-06T02:48:47.699Z",
   "phase": "非竞价时段(参考价)",
   "signal": {
     "open": 1.398,
@@ -13,9 +13,9 @@
     "sell_amt": 502070,
     "skip": false,
     "skip_reason": "",
-    "current_price": 1.399,
+    "current_price": 1.397,
     "high": 1.406,
     "low": 1.396,
-    "quote_time": "20260806102241"
+    "quote_time": "20260806104844"
   }
 }

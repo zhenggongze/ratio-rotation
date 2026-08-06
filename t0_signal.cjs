@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { T0_CONFIG, computeT0Signal, loadBacktestJson } = require('./t0_engine.cjs');
+const { sendPushWithRetry } = require('./pusher.cjs');
 
 // 尝试加载 .env（本地开发用，GitHub Actions 用环境变量）
 try {
@@ -14,8 +15,6 @@ try {
 } catch (e) { /* dotenv 未安装时降级 */ }
 
 const SIGNAL_FILE = path.join(__dirname, 'data', 't0', 't0_signal.json');
-const PUSHDEER_KEY = process.env.PUSHDEER_KEY || '';
-const PUSHDEER_URL = process.env.PUSHDEER_URL || 'https://api2.pushdeer.com/message/push';
 
 // ============================================================
 // 拉取腾讯实时行情
@@ -65,59 +64,37 @@ function currentPhase() {
 }
 
 // ============================================================
-// 格式化信号文本（推送/展示用）
+// 北京时间日期字符串（如: 8月6日(周四) 09:25）
 // ============================================================
-function formatSignalText(sig, phaseLabel) {
-  const L = [];
-  L.push(`【515180 红利ETF · 做T挂单信号】`);
-  L.push(`━━━━━━━━━━━━━━━━━━`);
-  L.push(`时间: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} (UTC)`);
-  if (phaseLabel) L.push(`时段: ${phaseLabel}`);
-  L.push(`昨收: ${sig.prev_close.toFixed(3)}`);
-  L.push(`今开: ${sig.open.toFixed(3)} (跳空 ${sig.gap_pct >= 0 ? '+' : ''}${sig.gap_pct}%)`);
-  L.push(`━━━━━━━━━━━━━━━━━━`);
-  if (sig.skip) {
-    L.push(`⚠ ${sig.skip_reason}`);
-  } else {
-    L.push(`【买入监控价】 ${sig.buy_p.toFixed(3)}  (开盘×${T0_CONFIG.BUY_K})`);
-    L.push(`【卖出监控价】 ${sig.sell_p.toFixed(3)}  (开盘×${T0_CONFIG.SELL_K})`);
-    L.push(`委托数量: ${sig.shares.toLocaleString()} 股`);
-    L.push(`买入金额约: ${sig.buy_amt.toLocaleString()} 元`);
-    L.push(`卖出金额约: ${sig.sell_amt.toLocaleString()} 元`);
-    L.push(`━━━━━━━━━━━━━━━━━━`);
-    L.push(`操作: 条件单→日内先买后卖`);
-    L.push(`  先买=${sig.buy_p.toFixed(3)} 后卖=${sig.sell_p.toFixed(3)}`);
-    L.push(`  市价委托(对手方最优) 当日有效`);
-    L.push(`14:50 若只买未卖→手动卖出等量当日了结`);
-  }
-  L.push(`━━━━━━━━━━━━━━━━━━`);
-  return L.join('\n');
+function beijingDateStr() {
+  const d = new Date(Date.now() + 8 * 3600 * 1000);
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const iso = d.toISOString();
+  const month = parseInt(iso.slice(5, 7), 10);
+  const day = parseInt(iso.slice(8, 10), 10);
+  const hour = parseInt(iso.slice(11, 13), 10);
+  const minute = iso.slice(14, 16);
+  return `${month}月${day}日(${weekdays[d.getUTCDay()]}) ${String(hour).padStart(2, '0')}:${minute}`;
 }
 
 // ============================================================
-// 推送 PushDeer
+// 格式化信号文本（简洁纯文本，与轮动推送风格一致）
 // ============================================================
-async function pushDeer(text) {
-  if (!PUSHDEER_KEY) {
-    console.log('  ⚠ 未配置 PUSHDEER_KEY，跳过推送');
-    return { success: false, error: 'no key' };
+function formatSignalText(sig) {
+  const L = [];
+  L.push(`【做T挂单信号】${beijingDateStr()}`);
+  if (sig.skip) {
+    L.push(`⚠ 低开${Math.abs(sig.gap_pct)}%超2%，按纪律今日不做T不挂单`);
+    return L.join('\n');
   }
-  return new Promise((resolve, reject) => {
-    const params = new URLSearchParams({ pushkey: PUSHDEER_KEY, text: text, desp: '', type: 'markdown' });
-    const url = `${PUSHDEER_URL}?${params.toString()}`;
-    https.get(url, res => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(d);
-          resolve({ success: json.code === 0, error: json.error || json.content || d });
-        } catch (e) {
-          resolve({ success: false, error: d.slice(0, 100) });
-        }
-      });
-    }).on('error', reject);
-  });
+  const gapDesc = sig.gap_pct > 0 ? `高开${sig.gap_pct}%` : (sig.gap_pct < 0 ? `低开${Math.abs(sig.gap_pct)}%` : '平开');
+  L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
+  L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}）`);
+  L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}）`);
+  L.push(`委托${sig.shares.toLocaleString()}股 约${(sig.buy_amt / 10000).toFixed(1)}万元`);
+  L.push(`操作：条件单→日内先买后卖，市价委托当日有效`);
+  L.push(`14:50若只买未卖→手动卖出等量当日了结`);
+  return L.join('\n');
 }
 
 // ============================================================
@@ -158,7 +135,7 @@ async function main() {
     process.exit(1);
   }
 
-  const text = formatSignalText(sig, phaseLabel);
+  const text = formatSignalText(sig);
   console.log('\n' + text);
 
   // 保存信号文件
@@ -178,10 +155,10 @@ async function main() {
   fs.writeFileSync(SIGNAL_FILE, JSON.stringify(payload, null, 2), 'utf-8');
   console.log(`\n✓ 信号已保存: ${SIGNAL_FILE}`);
 
-  // 推送
+  // 推送（复用 pusher.cjs：type=text + 3次重试，与轮动推送一致）
   if (doPush) {
     console.log('\n推送 PushDeer...');
-    const r = await pushDeer(text);
+    const r = await sendPushWithRetry(text, '', 't0_signal');
     if (r.success) {
       console.log('  ✓ 推送成功');
     } else {
