@@ -552,6 +552,12 @@
     .t0-daily-stats { margin-top: 8px; font-size: 12px; color: var(--text-light); }
     .t0-daily-stats b { color: var(--pos); font-weight: 600; }
     .t0-daily-subtitle { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+    /* ===== 每日状态分布（加总=100%） ===== */
+    .t0-status-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #eef1f5; margin: 10px 0 8px; }
+    .t0-status-bar div { height: 100%; }
+    .t0-status-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--text); line-height: 1.8; }
+    .t0-status-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+    .t0-status-legend b { color: var(--text); margin-left: 4px; }
 
     /* ===== 仓位卡片 ===== */
     .position-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
@@ -721,6 +727,10 @@
           <span class="section-subtitle" id="t0BacktestRange"></span>
         </div>
         <div class="metrics-grid" id="t0MetricsGrid"></div>
+
+        <!-- 每日状态分布（全部选项，加总=100%） -->
+        <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）</div>
+        <div id="t0StatusDist"></div>
 
         <!-- 历史业绩：每日明细（全周期回测） -->
         <div class="t0-daily-subtitle" id="t0HistoryDailyMeta"></div>
@@ -1351,6 +1361,15 @@
           </div>
         `).join('');
 
+        // ===== 每日状态分布（全部选项，加总=100%） =====
+        const untrig = s.trading_days - s.skip_days - s.trig_days;
+        document.getElementById('t0StatusDist').innerHTML = buildT0StatusHTML([
+          { label: '双边成交', count: s.both_days, color: 'var(--pos)' },
+          { label: '仅买收盘恢复', count: s.buy_only_days, color: '#e67e22' },
+          { label: '未触发买入', count: untrig, color: '#95a5a6' },
+          { label: '低开跳过', count: s.skip_days, color: '#7f8c8d' }
+        ]);
+
         // ===== 逐年收益图 =====
         const ctx = document.getElementById('t0YearlyChart');
         if (ctx && typeof Chart !== 'undefined' && bt.yearly && bt.yearly.length > 0) {
@@ -1433,6 +1452,21 @@
       }).join('');
     }
 
+    // 每日状态分布 HTML（堆叠比例条 + 图例 + 合计100%）
+    function buildT0StatusHTML(items) {
+      const total = items.reduce((a, i) => a + (i.count || 0), 0);
+      if (total <= 0) return '<div class="gray" style="font-size:12px;">暂无数据</div>';
+      const segs = items.map(i => {
+        const p = total ? i.count / total * 100 : 0;
+        return `<div style="width:${p.toFixed(2)}%;background:${i.color};" title="${i.label} ${i.count}天（${p.toFixed(1)}%）"></div>`;
+      }).join('');
+      const legend = items.map(i => {
+        const p = total ? i.count / total * 100 : 0;
+        return `<span><i style="background:${i.color}"></i>${i.label} ${i.count}天（${p.toFixed(1)}%）</span>`;
+      }).join('');
+      return `<div class="t0-status-bar">${segs}</div><div class="t0-status-legend">${legend}<b>合计 ${total} 天 = 100%</b></div>`;
+    }
+
     // 渲染每日记录（自今日起）
     function renderT0Daily(daily) {
       const meta = document.getElementById('t0DailyMeta');
@@ -1463,6 +1497,7 @@
           { label: '双边成交', value: both + '天', cls: '', sub: '占' + pct(both) },
           { label: '仅买收盘恢复', value: recover + '天', cls: '', sub: '占' + pct(recover) },
           { label: '未触发', value: untrig + '天', cls: '', sub: '占' + pct(untrig) },
+          { label: '低开跳过', value: skip + '天', cls: '', sub: '占' + pct(skip) },
           { label: '待收盘', value: pend + '天', cls: '', sub: '盘中未定' }
         ];
         cards.innerHTML = cardItems.map(it => `
@@ -1473,9 +1508,15 @@
           </div>
         `).join('');
       }
-      // 统计行
+      // 状态分布（全部选项，加总=100%）
       if (statsEl) {
-        statsEl.innerHTML = `累计 ${total} 个交易日 · 双边成交 <b>${both}</b> 天（${pct(both)}）· 仅买收盘恢复 ${recover} 天（${pct(recover)}）· 未触发 ${untrig} 天 · 跳过 ${skip} 天${pend ? ` · 待收盘 ${pend} 天` : ''}`;
+        statsEl.innerHTML = buildT0StatusHTML([
+          { label: '双边成交', count: both, color: 'var(--pos)' },
+          { label: '仅买收盘恢复', count: recover, color: '#e67e22' },
+          { label: '未触发', count: untrig, color: '#95a5a6' },
+          { label: '低开跳过', count: skip, color: '#7f8c8d' },
+          { label: '待收盘', count: pend, color: '#f1c40f' }
+        ]);
       }
       body.innerHTML = buildT0RowsHTML([...records].reverse()); // 最新在上
     }

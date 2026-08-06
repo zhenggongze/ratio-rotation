@@ -51,6 +51,9 @@ with sync_playwright() as p:
     daily_cards = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyCards .metric-card')).map(c => (c.innerText || '').replace(/\\s+/g, ' ').trim())")
     history_rows = page.evaluate("() => { const b = document.getElementById('t0HistoryDailyBody'); return b ? b.children.length : 0; }")
     history_meta = page.evaluate("() => { const el = document.getElementById('t0HistoryDailyMeta'); return el ? el.textContent : null; }")
+    status_dist = page.evaluate("() => { const el = document.getElementById('t0StatusDist'); return el ? el.innerText.replace(/\\s+/g, ' ') : null; }")
+    print("\n=== 历史业绩状态分布 ===")
+    print(status_dist)
     print("\n=== 每日记录 ===")
     print("更新时间:", daily_meta)
     print("行数:", len(daily_rows))
@@ -68,8 +71,12 @@ with sync_playwright() as p:
     print("\n双边成交卡:", both_card)
     both_pct_ok = bool(re.search(r"双边成交\s*577天.*占\d+\.\d%", both_card.replace("\u00a0", "")))
     print("双边成交占比标注:", both_pct_ok)
-    daily_stats_ok = bool(re.search(r"累计 \d+ 个交易日.*双边成交 \d+ 天（\d+\.\d%）", daily_stats or ""))
+    daily_stats_ok = bool(re.search(r"双边成交 \d+天（\d+\.\d%）.*仅买收盘恢复 \d+天（\d+\.\d%）", daily_stats or ""))
     print("每日记录统计占比:", daily_stats_ok)
+    status_dist_ok = bool(re.search(r"未触发买入.*低开跳过.*合计 1604 天 = 100%", status_dist or ""))
+    print("历史状态分布(未触发/跳过/合计100%):", status_dist_ok)
+    daily_status_ok = bool(re.search(r"合计 \d+ 天 = 100%", daily_stats or ""))
+    print("每日状态分布合计100%:", daily_status_ok)
 
     full = sig + " " + " ".join(metrics) + " " + (daily_meta or "") + " " + " ".join(daily_rows)
     checks = [
@@ -83,6 +90,8 @@ with sync_playwright() as p:
         ("每日记录统计占比", daily_stats_ok),
         ("每日记录统计卡", len(daily_cards) >= 4),
         ("历史业绩每日明细表", history_rows >= 1600),
+        ("历史状态分布含未触发/跳过/合计100%", status_dist_ok),
+        ("每日状态分布合计100%", daily_status_ok),
     ]
     print("\n=== 断言 ===")
     for name, ok in checks:
