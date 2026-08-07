@@ -93,8 +93,9 @@ function formatSignalText(sig) {
   L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
   L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}，跌${buyPct}%触发）`);
   L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}，涨${sellPct}%触发）`);
+  L.push(`委托方式：限价委托。买入挂 ${sig.buy_p.toFixed(3)}、卖出挂 ${sig.sell_p.toFixed(3)}，与回测口径一致，勿用市价单（避免滑点）`);
   L.push(`策略v2：日内先买后卖，买入成交后涨${sellPct}%卖出，当日了结不过夜`);
-  L.push(`14:50 若只买未卖 → 手动卖出等量当日了结`);
+  L.push(`14:50 若只买未卖 → 手动市价卖出等量当日了结`);
   return L.join('\n');
 }
 

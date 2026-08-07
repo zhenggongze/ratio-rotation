@@ -1547,8 +1547,8 @@
                 <tr><td>委托仓位</td><td>${(p.capital / 10000).toFixed(0)}万</td><td>每日固定做T委托金额</td></tr>
                 <tr><td>佣金</td><td>万${p.commission_rate * 10000}</td><td>双边计费基准</td></tr>
                 <tr><td>跳过条件</td><td>低开超${p.skip_drop * 100}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
-                <tr><td>执行方式</td><td>先买后卖</td><td>条件单「日内先买后卖」，正T保护不卖底仓</td></tr>
-                <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 卖出，不过夜</td></tr>
+                <tr><td>执行方式</td><td>先买后卖</td><td>限价委托：买入挂监控价、卖出挂监控价（与回测口径一致，勿用市价单避免滑点），正T保护不卖底仓</td></tr>
+                <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 手动市价卖出等量，不过夜</td></tr>
               </tbody>
             </table>
           </div>
