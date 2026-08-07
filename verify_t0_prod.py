@@ -119,19 +119,23 @@ with sync_playwright() as p:
     checks.append(("信号卡含买入/卖出监控价",
                    bool(signal_text) and "买入监控价" in signal_text and "卖出监控价" in signal_text and
                    "开盘 × 0.997" in signal_text and "开盘 × 1.008" in signal_text))
-    # ① 历史业绩指标卡：4张百分比卡
-    checks.append(("历史业绩指标卡=4张且均为百分比",
-                   len(metrics) == 4 and all(re.search(pct3, m) for m in metrics) and
+    # ① 历史业绩指标卡：5张百分比卡（含做T累计净利年化）
+    checks.append(("历史业绩指标卡=5张且均为百分比",
+                   len(metrics) == 5 and all(re.search(pct3, m) for m in metrics) and
                    strip_badge(metrics[0]).startswith("做T累计净利(扣手续费)") and
                    strip_badge(metrics[1]).startswith("持有净利(一直拿着)") and
                    strip_badge(metrics[2]).startswith("累计超额收益") and
-                   strip_badge(metrics[3]).startswith("年化超额收益率")))
+                   strip_badge(metrics[3]).startswith("年化超额收益率") and
+                   strip_badge(metrics[4]).startswith("做T累计净利年化")))
     # v2 分钟级真实（14:50 了结）：做T累计32.71% = 持有5.82% + 做T差价26.89%（385天真实成交，佣金万0.5双边）
     checks.append(("历史业绩做T累计32.71%/持有5.82%/超额26.89%",
                    "32.71%" in metrics[0] and "5.82%" in metrics[1] and "26.89%" in metrics[2]))
     # 年化超额收益率 = 26.89% ÷ 1.59年(2025-01-02~2026-08-05) ≈ 16.93%
     checks.append(("年化超额收益率≈16.93%(窗口1.6年)",
                    "16.93%" in metrics[3] and "年(窗口内)" in metrics[3]))
+    # 做T累计净利(扣手续费)年化 = 32.71% ÷ 1.59年 ≈ 20.60%
+    checks.append(("做T累计净利年化≈20.60%(窗口1.6年)",
+                   "20.60%" in metrics[4] and "做T累计净利 ÷ " in metrics[4]))
     # 每日记录指标卡：3张（今日2026-08-06未触发：持有1.29%+做T0%=做T累计1.29%）
     checks.append(("每日记录指标卡=3张且均为百分比",
                    len(daily_cards) == 3 and all(re.search(pct3, m) for m in daily_cards) and

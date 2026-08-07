@@ -934,7 +934,14 @@
       try {
         const resp = await fetch(T0_FC_API + '/api/t0/load', { cache: 'no-store' });
         const data = await resp.json();
-        if (data && data.records) t0Adjustments = data.records;
+        if (data && data.records) {
+          // FC 返回 records[date] 为对象 { actual_sell_price, updated_at }，转成纯数字方便渲染
+          const recs = {};
+          for (const [d, v] of Object.entries(data.records)) {
+            recs[d] = (v && typeof v === 'object' && 'actual_sell_price' in v) ? Number(v.actual_sell_price) : Number(v);
+          }
+          t0Adjustments = recs;
+        }
       } catch (e) {
         // 拉取失败时保持空记录；输入框会因 T0_FC_API 未连上而禁用，避免"以为存了其实丢了"
       }
@@ -1586,6 +1593,9 @@
         } catch (e) { /* 日期解析失败则不显示 */ }
         if (annualExcess !== null) {
           items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
+          // 做T累计净利(扣手续费)的年化收益 = 做T累计净利 ÷ 回测区间年数（持有+做T差价合计的年化口径）
+          const t0NetAnnual = t0Net / cap * 100 / yearsUsed;
+          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
         }
         // 口径提示条已移除：与说明面板①内容重复（历史业绩仅统计有分钟数据的交易日，无折算假设）
         document.getElementById('t0MetricsGrid').innerHTML = items.map(it => `
