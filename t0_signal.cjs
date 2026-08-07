@@ -93,8 +93,8 @@ function formatSignalText(sig) {
   L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
   L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}，跌${buyPct}%触发）`);
   L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}，涨${sellPct}%触发）`);
-  L.push(`委托：限价单，委托价=监控价。开盘先挂买入${sig.buy_p.toFixed(3)}，成交后再挂卖出${sig.sell_p.toFixed(3)}`);
-  L.push(`⚠ 勿用市价单/即时卖一价！0.001滑点即吞做T利润（回测按限价成交）`);
+  L.push(`委托：条件单委托价选「即时限价」（触发瞬间最新价挂限价单，买≤监控价/卖≥监控价，匹配回测）；手动挂单则限价直接填监控价`);
+  L.push(`开盘先挂买入${sig.buy_p.toFixed(3)}，买入成交后再挂卖出${sig.sell_p.toFixed(3)}。勿用「即时卖一价/对手方最优」！`);
   L.push(`14:50 若只买未卖 → 手动市价卖出等量当日了结`);
   return L.join('\n');
 }
