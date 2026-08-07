@@ -454,6 +454,7 @@ function computeMinuteDaily(day, bars, prevClose) {
     ...base, status,
     buy_filled: true, sell_filled: sellFilled,
     buy_time: buyTime, sell_time: sellTime,
+    recover_price: Math.round(recoverPrice * 1000) / 1000,   // 当日14:50时点价格（仅买未卖出时的实际恢复卖出价；双边成交日为参考价）
     gross: Math.round(gross * 100) / 100,
     commission: Math.round(commission * 100) / 100,
     trades,

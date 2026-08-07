@@ -140,12 +140,13 @@ with sync_playwright() as p:
     checks.append(("每日记录meta为①分钟级真实口径", "①" in (daily_meta or "")))
     checks.append(("每日记录做T卡为①分钟级真实口径",
                    len(daily_cards) == 3 and "分钟级真实成交" in daily_cards[0] and "分钟级真实成交" in daily_cards[2]))
-    # 历史明细表头：11列统一维度（含买卖时间，无折算超额列）
-    checks.append(("历史明细表头=11列含买卖时间且无折算列",
-                   history_head == ["日期", "状态", "买入时间", "卖出时间", "开盘", "收盘", "买入价", "卖出价", "成交", "当日净利(扣费)", "当日超额"]))
-    # 每日记录表头：11列（与历史明细一致）
-    checks.append(("每日记录表头=11列含买卖时间",
-                   len(daily_head) == 11 and daily_head[2] == "买入时间" and daily_head[3] == "卖出时间" and
+    # 历史明细表头：12列统一维度（含买卖时间、14:50价，无折算超额列）
+    checks.append(("历史明细表头=12列含买卖时间+14:50价",
+                   history_head == ["日期", "状态", "买入时间", "卖出时间", "开盘", "收盘", "买入价", "卖出价", "14:50价", "成交", "当日净利(扣费)", "当日超额"]))
+    # 每日记录表头：12列（与历史明细一致）
+    checks.append(("每日记录表头=12列含买卖时间+14:50价",
+                   len(daily_head) == 12 and daily_head[2] == "买入时间" and daily_head[3] == "卖出时间" and
+                   daily_head[8] == "14:50价" and
                    daily_head[1] == "状态" and "当日净利(扣费)" in daily_head and "当日超额" in daily_head))
     # 历史明细倒序：第一行应为最新日期 2026-08-05（日期格式与每日记录对齐 2026-08-05）
     checks.append(("历史明细倒序展示(最新在上)", bool(history_first) and history_first[0].startswith("2026-08-05")))
@@ -162,6 +163,9 @@ with sync_playwright() as p:
                    bool(history_first) and bool(re.search(r"\d{2}:\d{2}", history_first[0]))))
     # 历史明细首行含百分比净利/超额
     checks.append(("历史明细行含百分比净利与超额", bool(history_first) and re.search(pct3, history_first[0])))
+    # 历史明细行含 14:50 价（仅买14:50卖出日显示实际恢复卖出价）
+    history_cells = (history_first[0].split() if history_first else [])
+    checks.append(("历史明细行含14:50价列", len(history_cells) >= 9 and bool(re.search(r"\d\.\d{3}", history_cells[8]))))
     # 每日状态分布合计100%
     checks.append(("每日状态分布合计100%", bool(re.search(r"合计 \d+ 天 = 100%", daily_stats or ""))))
     # 每日状态分布与历史同维度：含各类型平均当日做T净利%（未触发买入均+0.00%）

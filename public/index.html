@@ -798,6 +798,7 @@
                 <th>收盘</th>
                 <th>买入价</th>
                 <th>卖出价</th>
+                <th>14:50价</th>
                 <th>成交</th>
                 <th>当日净利(扣费)</th>
                 <th>当日超额</th>
@@ -843,6 +844,7 @@
                 <th>收盘</th>
                 <th>买入价</th>
                 <th>卖出价</th>
+                <th>14:50价</th>
                 <th>成交</th>
                 <th>当日净利(扣费)</th>
                 <th>当日超额</th>
@@ -1664,6 +1666,8 @@
         const netCls = dayNet === null ? 'gray' : (dayNet === 0 ? 'gray' : (dayNet > 0 ? 'pl' : 'mn'));
         const exCls = dayEx === null ? 'gray' : (dayEx === 0 ? 'gray' : (dayEx > 0 ? 'pl' : 'mn'));
         const timeCells = showTime ? `<td>${r.buy_time || '—'}</td><td>${r.sell_time || '—'}</td>` : '';
+        // 14:50时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
+        const rp1450 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
         return `<tr>
           <td>${fmtDate(r.date)}</td>
           <td><span class="t0-status-tag ${statusCls}">${r.status}</span></td>
@@ -1672,6 +1676,7 @@
           <td>${r.close ? Number(r.close).toFixed(3) : '—'}</td>
           <td>${Number(r.buy_p).toFixed(3)}</td>
           <td>${Number(r.sell_p).toFixed(3)}</td>
+          <td>${rp1450}</td>
           <td>${trade}</td>
           <td class="${netCls}">${fmtPct(dayNet)}</td>
           <td class="${exCls}">${fmtPct(dayEx)}</td>
@@ -1767,7 +1772,7 @@
       const btn = document.getElementById('t0HistoryExpandBtn');
       if (!body) return;
       if (!bt || !bt.daily || bt.daily.length === 0) {
-        body.innerHTML = '<tr><td colspan="11" class="gray" style="text-align:center;padding:18px;">每日明细未生成（重新生成回测后更新）</td></tr>';
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">每日明细未生成（重新生成回测后更新）</td></tr>';
         if (wrap) wrap.style.display = 'none';
         return;
       }
