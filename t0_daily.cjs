@@ -1,11 +1,11 @@
 // 做T每日记录生成脚本（16:00 收盘后由 daily_rotation workflow 调用）
-// 功能：拉取当日行情 → 计算当日做T记录 → 追加/覆盖到 t0_daily.json（按 date 幂等）
-// 口径：computeT0Daily 与回测完全一致（向下取整挂单价、佣金万1双边、低开2%跳过）
+// 功能：拉取当日行情+1分钟K线 → 分钟级真实判定当日做T记录（与历史回测同一口径）→ 追加/覆盖到 t0_daily.json（按 date 幂等）
+// 口径：收盘后（15:30 后）用腾讯 1 分钟K线（OHLC）经 computeMinuteDaily 判定真实买卖成交，与历史回测 low/high 判定完全一致，无任何日线猜测
 // 盘中（北京时间 15:30 前）运行时当日行标记"待收盘"，收盘后运行生成完整成交/盈亏
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { T0_CONFIG, computeT0Daily } = require('./t0_engine.cjs');
+const { T0_CONFIG, computeT0Daily, computeMinuteDaily } = require('./t0_engine.cjs');
 
 const DAILY_FILE = path.join(__dirname, 'data', 't0', 't0_daily.json');
 
@@ -53,6 +53,46 @@ function beijingNowStr() {
 }
 
 // ============================================================
+// 拉取腾讯当日 1 分钟 K 线（mkline，含 OHLC，与历史回测同一判定口径）
+// 返回: [{ date, time, open, close, high, low }, ...]（最近320条，含当日全天）
+// ============================================================
+function fetchM1() {
+  return new Promise((resolve, reject) => {
+    const url = `https://ifzq.gtimg.cn/appstock/app/kline/mkline?param=${T0_CONFIG.SYMBOL},m1,,320`;
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://gu.qq.com/' } }, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+          const m1 = json.data && json.data[T0_CONFIG.SYMBOL] && json.data[T0_CONFIG.SYMBOL].m1;
+          if (!Array.isArray(m1)) return reject(new Error('1分钟K线数据格式异常'));
+          const list = [];
+          for (const row of m1) {
+            const dt = String(row[0]);
+            const open = parseFloat(row[1]), close = parseFloat(row[2]), high = parseFloat(row[3]), low = parseFloat(row[4]);
+            if (!dt || isNaN(open) || isNaN(close) || isNaN(high) || isNaN(low) || low <= 0) continue;
+            list.push({ date: Number(dt), time: dt.slice(8, 10) + ':' + dt.slice(10, 12), open, close, high, low });
+          }
+          resolve(list);
+        } catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+// ============================================================
+// 分钟级单日记录生成（收盘后 15:30 之后调用，与历史回测同一口径 computeMinuteDaily）
+// bars: 腾讯 1 分钟 K 线（{date,open,close,high,low}），过滤当日 → 判定真实买卖成交
+// ============================================================
+function buildMinuteRecord(day, bars, prevClose) {
+  const dayCompact = day.replace(/-/g, '');
+  const dayBars = bars.filter(b => String(b.date).slice(0, 8) === dayCompact);
+  if (dayBars.length === 0) throw new Error('当日 1 分钟K线为空');
+  return computeMinuteDaily(day, dayBars, prevClose);
+}
+
+// ============================================================
 // 主流程
 // ============================================================
 async function main() {
@@ -70,14 +110,34 @@ async function main() {
   }
 
   const today = beijingDate();
-  const record = computeT0Daily({
-    date: today,
-    open: quote.open,
-    prevClose: quote.prev_close,
-    high: quote.high,
-    low: quote.low,
-    close: quote.price
-  });
+
+  // 北京时间当前时间
+  const bjNow = new Date(Date.now() + 8 * 3600 * 1000);
+  const bjHm = bjNow.getUTCHours() * 60 + bjNow.getUTCMinutes();
+
+  let record;
+  if (bjHm < 15 * 60 + 30) {
+    // 盘中（15:30 前）：分时未完整，标记"待收盘"占位；收盘后 16:00 workflow 重新运行生成分钟级完整记录
+    record = computeT0Daily({
+      date: today,
+      open: quote.open,
+      prevClose: quote.prev_close,
+      high: quote.high,
+      low: quote.low,
+      close: quote.price,
+      recoverPrice: null
+    });
+  } else {
+    // 收盘后：拉当日 1 分钟K线（OHLC），分钟级真实判定（与历史回测完全同口径：low/high 判定）
+    let m1;
+    try {
+      m1 = await fetchM1();
+    } catch (e) {
+      console.log(`✗ 1分钟K线获取失败（分钟级判定必需，拒绝降级为日线猜测）: ${e.message}`);
+      process.exit(1);
+    }
+    record = buildMinuteRecord(today, m1, quote.prev_close);
+  }
 
   // 读取已有记录（首次运行创建）
   let data = { updated_at: '', count: 0, records: [] };

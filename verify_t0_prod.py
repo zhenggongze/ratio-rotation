@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-# 生产环境验证：portfolio-analysis.top 红利做T页签（方案B：向下取整）
-import re, os, sys
+# 生产环境验证：portfolio-analysis.top 红利做T页签（v2 分钟级真实口径）
+# 策略 v2：买0.3%（×0.997）/ 卖0.8%（×1.008），385 天分钟级真实成交（2025-01-02 ~ 2026-08-05）
+# 用法: python verify_t0_prod.py [URL]   （不传 URL 默认生产环境）
+import re, os, sys, time
 from playwright.sync_api import sync_playwright
 
-URL = "https://portfolio-analysis.top/ratio-rotation/index.html"
+URL = sys.argv[1] if len(sys.argv) > 1 else "https://portfolio-analysis.top/ratio-rotation/index.html"
 CHROME = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots", "t0-tab-prod.png")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots", "t0-tab-prod-v2.png")
 
 errors = []
 all_pass = True
@@ -17,87 +19,201 @@ with sync_playwright() as p:
     page.on("pageerror", lambda e: errors.append("pageerror: " + str(e)))
     page.on("console", lambda m: errors.append("console[{}]: {}".format(m.location.get("url", "?"), m.text)) if m.type == "error" else None)
 
-    print("访问生产环境:", URL)
+    print("访问:", URL)
+    t0_start = time.time()
     page.goto(URL, wait_until="networkidle", timeout=30000)
     page.wait_for_function(
         "() => { const c = document.getElementById('content'); return c && c.style.display !== 'none' && c.children.length > 0; }",
         timeout=15000)
     page.wait_for_timeout(2000)
+    t0_elapsed = time.time() - t0_start
 
-    print("点击「红利做T」页签...")
-    page.click('.tab[data-tab="t0"]')
+    print("默认打开页签为「红利做T」...")
     page.wait_for_function(
         "() => { const c = document.getElementById('t0Content'); return c && c.style.display === 'block' && document.getElementById('t0SignalCard').children.length > 0; }",
         timeout=10000)
+    page.wait_for_function(
+        "() => { const b = document.getElementById('t0HistoryDailyBody'); return b && b.children.length > 0; }",
+        timeout=15000)
     page.wait_for_timeout(1500)
 
-    sig = page.evaluate("() => document.getElementById('t0SignalCard').innerText")
-    print("\n=== 今日信号卡 ===")
-    print(sig.replace("\n", " | "))
+    # 默认页签(t0)渲染完成后的资源加载统计（t0_backtest.json 独立按需加载，未塞入 frontend_data.json）
+    res_stats = page.evaluate(
+        "() => performance.getEntriesByType('resource').filter(r => /frontend_data|t0_backtest/.test(r.name)).map(r => ({ name: r.name.split('/').pop(), transfer: r.transferSize, duration: Math.round(r.duration) }))")
 
-    metrics = page.evaluate(
-        "() => Array.from(document.querySelectorAll('#t0MetricsGrid .metric-card')).map(c => (c.innerText || '').replace(/\\n/g,' ').trim())")
-    print("\n=== 业绩指标卡 ===")
+    # ===== 通用采集 =====
+    def text(id_):
+        return page.evaluate("() => { const el = document.getElementById('%s'); return el ? el.textContent : null; }" % id_)
+
+    def cards(id_):
+        return page.evaluate(
+            "() => Array.from(document.querySelectorAll('#%s .metric-card')).map(c => (c.innerText || '').replace(/\\n/g,' ').trim())" % id_)
+
+    def head(id_):
+        return page.evaluate(
+            "() => { const t = document.getElementById('%s'); const tbl = t ? t.closest('table') : null; return tbl ? Array.from(tbl.querySelectorAll('thead th')).map(x => x.textContent.trim()) : null; }" % id_)
+
+    def rows(id_, n=5):
+        return page.evaluate(
+            "() => Array.from(document.querySelectorAll('#%s tr')).slice(0, %d).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())" % (id_, n))
+
+    signal_text = text("t0SignalCard")
+    metrics = cards("t0MetricsGrid")
+    daily_cards = cards("t0DailyCards")
+    daily_meta = text("t0DailyMeta")
+    daily_head = head("t0DailyBody")
+    history_head = head("t0HistoryDailyBody")
+    daily_rows = rows("t0DailyBody", 5)
+    history_first = rows("t0HistoryDailyBody", 3)
+    history_rows = page.evaluate("() => { const b = document.getElementById('t0HistoryDailyBody'); return b ? b.children.length : 0; }")
+    daily_stats = text("t0DailyStats")
+    status_dist = text("t0StatusDist")
+    # 数据口径说明面板
+    caliber_items = page.evaluate("() => Array.from(document.querySelectorAll('#t0CaliberBody .caliber-item')).map(x => x.id)")
+    caliber_text = page.evaluate("() => { const b = document.getElementById('t0CaliberBody'); return b ? b.textContent : ''; }")
+    panel_open = page.evaluate("() => { const p = document.getElementById('t0CaliberPanel'); return p ? p.open : null; }")
+    # 逐年收益表
+    yearly_rows = page.evaluate(
+        "() => Array.from(document.querySelectorAll('#t0YearlyTable tbody tr')).slice(0, 10).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
+    yearly_head = head("t0YearlyTable")
+    params = text("t0Params")
+
+    print("\n=== 加载性能 ===")
+    print("首页加载(首屏就绪): %.2f 秒" % t0_elapsed)
+    for r in res_stats:
+        print("  资源 %s: 传输 %d 字节, 耗时 %dms" % (r["name"], r["transfer"], r["duration"]))
+
+    print("\n=== 今日做T信号 ===")
+    print("信号卡:", (signal_text or "").replace("\n", " | "))
+    print("\n=== 历史业绩指标卡 ===")
     for m in metrics:
         print("  -", m)
-
-    range_ = page.evaluate("() => document.getElementById('t0BacktestRange').textContent")
-    print("\n回测区间:", range_)
-
-    # ===== 每日记录模块 =====
-    daily_meta = page.evaluate("() => { const el = document.getElementById('t0DailyMeta'); return el ? el.textContent : null; }")
-    daily_rows = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyBody tr')).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
-    daily_stats = page.evaluate("() => { const el = document.getElementById('t0DailyStats'); return el ? el.innerText : null; }")
-    daily_cards = page.evaluate("() => Array.from(document.querySelectorAll('#t0DailyCards .metric-card')).map(c => (c.innerText || '').replace(/\\s+/g, ' ').trim())")
-    history_rows = page.evaluate("() => { const b = document.getElementById('t0HistoryDailyBody'); return b ? b.children.length : 0; }")
-    history_meta = page.evaluate("() => { const el = document.getElementById('t0HistoryDailyMeta'); return el ? el.textContent : null; }")
-    status_dist = page.evaluate("() => { const el = document.getElementById('t0StatusDist'); return el ? el.innerText.replace(/\\s+/g, ' ') : null; }")
-    print("\n=== 历史业绩状态分布 ===")
-    print(status_dist)
-    print("\n=== 每日记录 ===")
+    print("\n=== 每日记录指标卡 ===")
+    for m in daily_cards:
+        print("  -", m)
     print("更新时间:", daily_meta)
-    print("行数:", len(daily_rows))
-    for r in daily_rows[:3]:
-        print("  -", r)
-    print("统计卡:", daily_cards)
-    print("统计行:", daily_stats)
+    print("每日记录表头:", daily_head)
+    print("历史明细表头:", history_head)
+    print("历史明细首行:", history_first[0] if history_first else None)
     print("历史明细行数:", history_rows)
-    print("历史明细标题:", history_meta)
-    daily_check = bool(re.search(r"更新于 \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", daily_meta or ""))
-    print("更新时间含秒级:", daily_check)
+    print("每日状态分布:", (daily_stats or "").replace("\n", " | "))
+    print("历史状态分布:", (status_dist or "").replace("\n", " | "))
+    print("逐年收益表头:", yearly_head)
+    print("逐年收益行:", yearly_rows)
 
-    # 历史业绩"双边成交"占比（sub 文本）
-    both_card = next((m for m in metrics if "双边成交" in m), "")
-    print("\n双边成交卡:", both_card)
-    both_pct_ok = bool(re.search(r"双边成交\s*577天.*占\d+\.\d%", both_card.replace("\u00a0", "")))
-    print("双边成交占比标注:", both_pct_ok)
-    daily_stats_ok = bool(re.search(r"双边成交 \d+天（\d+\.\d%）[\s\S]*仅买收盘恢复 \d+天（\d+\.\d%）", daily_stats or ""))
-    print("每日记录统计占比:", daily_stats_ok)
-    status_dist_ok = bool(re.search(r"未触发买入.*低开跳过.*合计 1604 天 = 100%", status_dist or ""))
-    print("历史状态分布(未触发/跳过/合计100%):", status_dist_ok)
-    daily_status_ok = bool(re.search(r"合计 \d+ 天 = 100%", daily_stats or ""))
-    print("每日状态分布合计100%:", daily_status_ok)
+    # ===== 断言（v2 分钟级真实口径） =====
+    pct3 = r"-?\d+\.\d{2}%"
+    checks = []
 
-    full = sig + " " + " ".join(metrics) + " " + (daily_meta or "") + " " + " ".join(daily_rows)
-    checks = [
-        ("卖出监控价 1.403（向下取整）", "1.403" in sig),
-        ("买入监控价 1.392", "1.392" in sig),
-        ("净盈利 127.6万（新口径）", bool(re.search(r"127[.,]6|1,276,477|1276477", full))),
-        ("超额 73.1万", bool(re.search(r"73[.,]1|731,022|731022", full))),
-        ("每日记录更新时间（秒级）", daily_check),
-        ("每日记录含今日行", any("2026-08-06" in r for r in daily_rows)),
-        ("历史业绩双边成交占比", both_pct_ok),
-        ("每日记录统计占比", daily_stats_ok),
-        ("每日记录统计卡", len(daily_cards) >= 4),
-        ("历史业绩每日明细表", history_rows >= 1600),
-        ("历史状态分布含未触发/跳过/合计100%", status_dist_ok),
-        ("每日状态分布合计100%", daily_status_ok),
-    ]
+    def strip_badge(m):
+        return re.sub(r"^[①②③④]", "", m).strip()
+
+    # ① 信号卡：v2 动态系数 0.997/1.008（今日 2026-08-06 未跳过）
+    checks.append(("信号卡含买入/卖出监控价",
+                   bool(signal_text) and "买入监控价" in signal_text and "卖出监控价" in signal_text and
+                   "开盘 × 0.997" in signal_text and "开盘 × 1.008" in signal_text))
+    # ① 历史业绩指标卡：4张百分比卡
+    checks.append(("历史业绩指标卡=4张且均为百分比",
+                   len(metrics) == 4 and all(re.search(pct3, m) for m in metrics) and
+                   strip_badge(metrics[0]).startswith("做T累计净利(扣手续费)") and
+                   strip_badge(metrics[1]).startswith("持有净利(一直拿着)") and
+                   strip_badge(metrics[2]).startswith("累计超额收益") and
+                   strip_badge(metrics[3]).startswith("年化超额收益率")))
+    # v2 分钟级真实（14:50 了结）：做T累计30.27% = 持有5.82% + 做T差价24.44%（385天真实成交）
+    checks.append(("历史业绩做T累计30.27%/持有5.82%/超额24.44%",
+                   "30.27%" in metrics[0] and "5.82%" in metrics[1] and "24.44%" in metrics[2]))
+    # 年化超额收益率 = 24.44% ÷ 1.59年(2025-01-02~2026-08-05) ≈ 15.39%
+    checks.append(("年化超额收益率≈15.39%(窗口1.6年)",
+                   "15.39%" in metrics[3] and "年(窗口内)" in metrics[3]))
+    # 每日记录指标卡：3张（今日2026-08-06未触发：持有1.29%+做T0%=做T累计1.29%）
+    checks.append(("每日记录指标卡=3张且均为百分比",
+                   len(daily_cards) == 3 and all(re.search(pct3, m) for m in daily_cards) and
+                   strip_badge(daily_cards[0]).startswith("做T累计净利(扣手续费)") and
+                   strip_badge(daily_cards[1]).startswith("持有净利(一直拿着)") and
+                   strip_badge(daily_cards[2]).startswith("累计超额收益")))
+    checks.append(("每日记录做T累计净利1.29%/超额0.00%",
+                   "1.29%" in daily_cards[0] and bool(re.search(r"超额收益\s*0\.00%", daily_cards[2]))))
+    # 每日记录 meta：日期范围~日期范围 时间，N个交易日
+    checks.append(("每日记录更新时间格式(日期范围+秒级+交易日数)",
+                   bool(re.search(r"\d{4}-\d{2}-\d{2}~\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}，\d+个交易日", daily_meta or ""))))
+    # 每日记录 meta 与做T卡均为①分钟级真实口径（非②理论）
+    checks.append(("每日记录meta为①分钟级真实口径", "①" in (daily_meta or "")))
+    checks.append(("每日记录做T卡为①分钟级真实口径",
+                   len(daily_cards) == 3 and "分钟级真实成交" in daily_cards[0] and "分钟级真实成交" in daily_cards[2]))
+    # 历史明细表头：11列统一维度（含买卖时间，无折算超额列）
+    checks.append(("历史明细表头=11列含买卖时间且无折算列",
+                   history_head == ["日期", "状态", "买入时间", "卖出时间", "开盘", "收盘", "买入价", "卖出价", "成交", "当日净利(扣费)", "当日超额"]))
+    # 每日记录表头：11列（与历史明细一致）
+    checks.append(("每日记录表头=11列含买卖时间",
+                   len(daily_head) == 11 and daily_head[2] == "买入时间" and daily_head[3] == "卖出时间" and
+                   daily_head[1] == "状态" and "当日净利(扣费)" in daily_head and "当日超额" in daily_head))
+    # 历史明细倒序：第一行应为最新日期 2026-08-05（日期格式与每日记录对齐 2026-08-05）
+    checks.append(("历史明细倒序展示(最新在上)", bool(history_first) and history_first[0].startswith("2026-08-05")))
+    # 历史明细行数=385（分钟级真实窗口）
+    checks.append(("历史明细行数=385", history_rows == 385))
+    # 历史明细首行含买卖时间（09:33 / 15:00 之类）
+    checks.append(("历史明细行含精确到分钟的买卖时间",
+                   bool(history_first) and bool(re.search(r"\d{2}:\d{2}", history_first[0]))))
+    # 历史明细首行含百分比净利/超额
+    checks.append(("历史明细行含百分比净利与超额", bool(history_first) and re.search(pct3, history_first[0])))
+    # 每日状态分布合计100%
+    checks.append(("每日状态分布合计100%", bool(re.search(r"合计 \d+ 天 = 100%", daily_stats or ""))))
+    # 每日状态分布与历史同维度：含各类型平均当日做T净利%（未触发买入均+0.00%）
+    checks.append(("每日状态分布含各类型平均收益", "均+0.00%" in (daily_stats or "")))
+    # 历史状态分布：单段真实口径①，合计385天=100%（仅买=14:50卖出），无理论/折算分段
+    checks.append(("历史状态分布单段(仅买14:50卖出/无理论折算分段)",
+                   bool(re.search(r"合计 385 天 = 100%", status_dist or "")) and
+                   "仅买14:50卖出" in (status_dist or "") and "仅买收盘恢复" not in (status_dist or "") and
+                   "折算口径" not in (status_dist or "") and "理论口径" not in (status_dist or "")))
+    # 历史状态分布各类型含平均当日做T净利%（双边成交均+1.09%、仅买14:50卖出均-0.05%、未触发/低开跳过均0.00%）
+    checks.append(("历史状态分布含各类型平均收益(双边+1.09%/仅买-0.05%)",
+                   "均+1.09%" in (status_dist or "") and "均-0.05%" in (status_dist or "") and
+                   "均+0.00%" in (status_dist or "")))
+    # 每日记录含今日行
+    checks.append(("每日记录含2026-08-06", any("2026-08-06" in r for r in daily_rows)))
+    # 默认打开页签为红利做T：t0 按钮 active、t0Content 显示、轮动内容隐藏、头部标题为红利做T
+    t0_tab_active = page.evaluate("() => { const b = document.querySelector('.tab[data-tab=\"t0\"]'); return b ? b.classList.contains('active') : null; }")
+    t0_content_shown = page.evaluate("() => { const c = document.getElementById('t0Content'); return c ? c.style.display === 'block' : null; }")
+    rot_content_hidden = page.evaluate("() => { const c = document.getElementById('rotationContent'); return c ? c.style.display === 'none' : null; }")
+    header_title = text("headerTitle")
+    # t0 页签必须为第一个（红利做T模块在3个模块之首）
+    t0_first_tab = page.evaluate("() => { const ts = document.querySelectorAll('.tabs .tab'); return ts.length >= 3 && ts[0] ? ts[0].dataset.tab === 't0' : null; }")
+    checks.append(("默认打开页签为红利做T且为第一个页签(t0按钮active且排第一/轮动隐藏/标题)",
+                   t0_tab_active is True and t0_first_tab is True and t0_content_shown is True and rot_content_hidden is True and
+                   bool(header_title) and "红利做T" in header_title))
+    # 按需加载：t0_backtest.json 为独立文件，默认页签(t0)打开时加载，未塞入 frontend_data.json
+    checks.append(("默认页签按需加载独立t0_backtest.json",
+                   any(r["name"] == "t0_backtest.json" for r in res_stats) and
+                   any(r["name"] == "frontend_data.json" for r in res_stats)))
+    # 历史业绩说明面板：默认收缩、含 ① ② 两个条目（②理论③折算已全部删除）
+    checks.append(("历史业绩说明面板默认收缩且含2条目(①②，无理论无折算)",
+                   panel_open is False and len(caliber_items) == 2 and
+                   "caliber-1" in caliber_items and "caliber-2" in caliber_items and
+                   "caliber-3" not in caliber_items and "caliber-4" not in caliber_items))
+    # 说明面板：真实口径①含385天/0.997/1.008；无任何 理论/折算/v1 痕迹
+    checks.append(("说明面板真实口径385天+无理论折算v1痕迹",
+                   "385 天" in caliber_text and "0.997" in caliber_text and "1.008" in caliber_text and
+                   "v1" not in caliber_text and "折算模型" not in caliber_text and "理论" not in caliber_text))
+    # 每日记录模块说明面板：默认收缩（拆分到各模块）
+    daily_caliber_open = page.evaluate("() => { const p = document.getElementById('t0DailyCaliberPanel'); return p ? p.open : null; }")
+    checks.append(("每日记录说明面板默认收缩(拆分到模块)", daily_caliber_open is False))
+    # 逐年收益表：2行(2025/2026)，表头含做T差价净利率①/做T累计净利率①
+    checks.append(("逐年收益表头含做T差价净利率①/做T累计净利率①",
+                   bool(yearly_head) and "做T差价净利率①" in " ".join(yearly_head) and "做T累计净利率①" in " ".join(yearly_head)))
+    checks.append(("逐年收益表=2行(2025/2026)",
+                   len(yearly_rows) == 2 and yearly_rows[0].startswith("2025") and yearly_rows[1].startswith("2026")))
+    checks.append(("逐年2025=持有3.78%+做T15.01%=累计18.79%",
+                   any(r.startswith("2025") and "3.78%" in r and "15.01%" in r and "18.79%" in r for r in yearly_rows)))
+    checks.append(("逐年2026=持有1.97%+做T9.43%=累计11.40%",
+                   any(r.startswith("2026") and "1.97%" in r and "9.43%" in r and "11.40%" in r for r in yearly_rows)))
+    # 参数与纪律：策略版本v2、买入×0.997、卖出×1.008
+    checks.append(("参数表含策略版本v2+买0.3%/卖0.8%",
+                   bool(params) and "v2" in params and "0.997" in params and "1.008" in params and "买0.3%/卖0.8%" in params))
+
     print("\n=== 断言 ===")
     for name, ok in checks:
         print(("✓" if ok else "✗"), name)
         if not ok:
-            global all_pass_holder
             all_pass = False
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -111,5 +227,5 @@ with sync_playwright() as p:
 
     browser.close()
 
-print("\n" + ("✅ 生产验证通过" if all_pass else "❌ 存在未通过项"))
+print("\n" + ("✅ 验证通过" if all_pass else "❌ 存在未通过项"))
 sys.exit(0 if all_pass else 1)

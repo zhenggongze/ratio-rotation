@@ -113,6 +113,8 @@ def main():
     files_to_upload = [
         ('index.html', 'index.html', 'text/html; charset=utf-8'),
         ('frontend_data.json', 'frontend_data.json', 'application/json; charset=utf-8'),
+        ('t0_backtest.json', 't0_backtest.json', 'application/json; charset=utf-8'),
+        ('vendor/chart.umd.min.js', 'vendor/chart.umd.min.js', 'application/javascript; charset=utf-8'),
     ]
 
     print(f'\n[1/2] 上传文件到 OSS')

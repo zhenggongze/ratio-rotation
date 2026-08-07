@@ -11,6 +11,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 
 // 尝试加载 .env
 try {
@@ -163,8 +164,13 @@ async function main() {
   console.log('-'.repeat(60));
 
   const filesToUpload = [
-    { local: 'index.html', oss: OSS_PREFIX + 'index.html', contentType: 'text/html; charset=utf-8' },
-    { local: 'frontend_data.json', oss: OSS_PREFIX + 'frontend_data.json', contentType: 'application/json; charset=utf-8' }
+    // cache 策略：index.html 每次验证（页面必须新）；数据文件可 304 验证（省流量且及时更新）；
+    // vendor 静态资源长缓存（文件不变时浏览器直接复用，不再请求）
+    // gzip: 大 JSON 压缩传输（浏览器自动解压），弱网/手机端加载提速
+    { local: 'index.html', oss: OSS_PREFIX + 'index.html', contentType: 'text/html; charset=utf-8', cache: 'no-cache' },
+    { local: 'frontend_data.json', oss: OSS_PREFIX + 'frontend_data.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache', gzip: true },
+    { local: 't0_backtest.json', oss: OSS_PREFIX + 't0_backtest.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache', gzip: true },
+    { local: 'vendor/chart.umd.min.js', oss: OSS_PREFIX + 'vendor/chart.umd.min.js', contentType: 'application/javascript; charset=utf-8', cache: 'public, max-age=604800' }
   ];
 
   for (const file of filesToUpload) {
@@ -174,8 +180,16 @@ async function main() {
       continue;
     }
 
-    const content = fs.readFileSync(localPath);
-    const fileSize = content.length;
+    const raw = fs.readFileSync(localPath);
+    const useGzip = !!file.gzip && raw.length > 1024;
+    const body = useGzip ? zlib.gzipSync(raw) : raw;
+    const headers = {
+      'Content-Type': file.contentType,
+      'Content-Disposition': 'inline',
+      'Cache-Control': file.cache || 'no-cache',
+      'Pragma': 'no-cache'
+    };
+    if (useGzip) headers['Content-Encoding'] = 'gzip';
 
     try {
       // 先删除旧文件（清除旧元数据）
@@ -185,16 +199,8 @@ async function main() {
         // 忽略删除失败（文件可能不存在）
       }
 
-      // 上传新文件
-      const result = await client.put(file.oss, localPath, {
-        headers: {
-          'Content-Type': file.contentType,
-          'Content-Disposition': 'inline',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+      // 上传新文件（gzip 文件带 Content-Encoding: gzip，浏览器自动解压）
+      const result = await client.put(file.oss, body, { headers });
 
       // 设置 ACL 为公共读（portfolio-analysis-hosting 已是 public-read，这里仍尝试设置）
       try {
@@ -203,7 +209,7 @@ async function main() {
         // 忽略 ACL 设置失败（Bucket 已是公共读时无需设置）
       }
 
-      console.log(`  ✓ ${file.oss} (${fileSize} 字节)`);
+      console.log(`  ✓ ${file.oss} (${body.length} 字节${useGzip ? ', gzip' : ''})`);
     } catch (e) {
       console.log(`  ✗ ${file.oss} 上传失败: ${e.message}`);
     }
@@ -319,7 +325,9 @@ async function main() {
     `https://${CDN_DOMAIN}/${prefixPath}`,
     `https://${CDN_DOMAIN}/${prefixPath}/`,
     `https://${CDN_DOMAIN}/${prefixPath}/index.html`,
-    `https://${CDN_DOMAIN}/${prefixPath}/frontend_data.json`
+    `https://${CDN_DOMAIN}/${prefixPath}/frontend_data.json`,
+    `https://${CDN_DOMAIN}/${prefixPath}/t0_backtest.json`,
+    `https://${CDN_DOMAIN}/${prefixPath}/vendor/chart.umd.min.js`
   ];
 
   try {

@@ -237,10 +237,30 @@ function exportFrontendData() {
     }
   }
   const t0Dims = {
-    backtest: t0Backtest,       // { summary, yearly, param }
     signal: t0Signal,           // { date, generated_at, phase, signal }
     daily: t0Daily              // { updated_at, count, records: [...] }
   };
+
+  // 做T回测数据拆分到独立文件 t0_backtest.json（首页不加载，点击做T页签时按需 fetch）
+  // 每日明细字段瘦身：只保留前端表格渲染所需字段（完整字段仍保留在 data/t0/t0_backtest.json 供回测脚本使用）
+  let t0BacktestSlim = null;
+  if (t0Backtest) {
+    t0BacktestSlim = {
+      summary: t0Backtest.summary,
+      yearly: t0Backtest.yearly,
+      param: t0Backtest.param,
+      daily: t0Backtest.daily.map(r => ({
+        date: r.date, status: r.status, open: r.open, close: r.close,
+        buy_p: r.buy_p, sell_p: r.sell_p,
+        buy_filled: r.buy_filled, sell_filled: r.sell_filled,
+        buy_time: r.buy_time || null, sell_time: r.sell_time || null,
+        hold_pct: r.hold_pct, net_pct: r.net_pct, excess_pct: r.excess_pct
+      }))
+    };
+    const t0BTPath = path.join(__dirname, 'public', 't0_backtest.json');
+    fs.writeFileSync(t0BTPath, JSON.stringify(t0BacktestSlim), 'utf-8');
+    console.log(`  做T回测已拆分: ${t0BTPath} (${(fs.statSync(t0BTPath).size / 1024).toFixed(1)} KB)`);
+  }
 
   // 组装输出
   const output = {
@@ -250,9 +270,9 @@ function exportFrontendData() {
     t0: t0Dims
   };
 
-  // 写入文件
+  // 写入文件（压缩格式，减小体积）
   const outputPath = path.join(config.dataDir, 'frontend_data.json');
-  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+  fs.writeFileSync(outputPath, JSON.stringify(output), 'utf-8');
 
   // 同步到 public/
   const publicPath = path.join(__dirname, 'public', 'frontend_data.json');
@@ -268,7 +288,8 @@ function exportFrontendData() {
     console.log(`  科创50: 无数据（需运行 init-history-kcb）`);
   }
   if (t0Backtest) {
-    console.log(`  做T: 净盈利${(t0Backtest.summary.net_profit / 10000).toFixed(1)}万, 超额${(t0Backtest.summary.excess_profit / 10000).toFixed(1)}万`);
+    const s = t0Backtest.summary;
+    console.log(`  做T(v2分钟级真实): 净利${(s.net_profit / 10000).toFixed(1)}万, 做T累计${((s.hold_profit + s.net_profit) / 10000).toFixed(1)}万, 区间${s.start_date}~${s.end_date} ${s.trading_days}天`);
   }
   if (t0Signal && t0Signal.signal) {
     const s = t0Signal.signal;

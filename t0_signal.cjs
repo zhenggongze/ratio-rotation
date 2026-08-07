@@ -88,11 +88,13 @@ function formatSignalText(sig) {
     return L.join('\n');
   }
   const gapDesc = sig.gap_pct > 0 ? `高开${sig.gap_pct}%` : (sig.gap_pct < 0 ? `低开${Math.abs(sig.gap_pct)}%` : '平开');
+  const buyPct = ((1 - T0_CONFIG.BUY_K) * 100).toFixed(1);      // v2 买 -0.3%
+  const sellPct = ((T0_CONFIG.SELL_K - 1) * 100).toFixed(1);    // v2 卖 +0.8%
   L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
-  L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}）`);
-  L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}）`);
-  L.push(`操作：条件单→日内先买后卖，市价委托当日有效`);
-  L.push(`14:50若只买未卖→手动卖出等量当日了结`);
+  L.push(`买入监控价 ${sig.buy_p.toFixed(3)}（开盘×${T0_CONFIG.BUY_K}，跌${buyPct}%触发）`);
+  L.push(`卖出监控价 ${sig.sell_p.toFixed(3)}（开盘×${T0_CONFIG.SELL_K}，涨${sellPct}%触发）`);
+  L.push(`策略v2：日内先买后卖，买入成交后涨${sellPct}%卖出，当日了结不过夜`);
+  L.push(`14:50 若只买未卖 → 手动卖出等量当日了结`);
   return L.join('\n');
 }
 

@@ -31,11 +31,14 @@ const REGION = process.env.OSS_REGION || 'cn-hangzhou';
 const OSS_DATA_PREFIX = process.env.OSS_DATA_PREFIX || 'ratio-rotation/data/';
 
 // 需要同步的数据文件列表（相对 data/ 目录）
+// 注意：t0/515180_1min_2025_2026.json 是 v2 分钟级回测的核心输入，
+//       CI 无状态环境必须下载它才能生成正确的分钟级回测，否则 buildBacktestJson 会回退到日线 v1
 const DATA_FILES = [
   'ratio_rotation_data.json',
   'kcb_rotation_data.json',
   'history_data.json',
   'hli_dividend_rates.json',
+  't0/515180_1min_2025_2026.json',
   't0/t0_backtest.json',
   't0/t0_signal.json',
   't0/t0_daily.json'
