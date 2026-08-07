@@ -126,12 +126,12 @@ with sync_playwright() as p:
                    strip_badge(metrics[1]).startswith("持有净利(一直拿着)") and
                    strip_badge(metrics[2]).startswith("累计超额收益") and
                    strip_badge(metrics[3]).startswith("年化超额收益率")))
-    # v2 分钟级真实（14:50 了结）：做T累计30.27% = 持有5.82% + 做T差价24.44%（385天真实成交）
-    checks.append(("历史业绩做T累计30.27%/持有5.82%/超额24.44%",
-                   "30.27%" in metrics[0] and "5.82%" in metrics[1] and "24.44%" in metrics[2]))
-    # 年化超额收益率 = 24.44% ÷ 1.59年(2025-01-02~2026-08-05) ≈ 15.39%
-    checks.append(("年化超额收益率≈15.39%(窗口1.6年)",
-                   "15.39%" in metrics[3] and "年(窗口内)" in metrics[3]))
+    # v2 分钟级真实（14:50 了结）：做T累计32.71% = 持有5.82% + 做T差价26.89%（385天真实成交，佣金万0.5双边）
+    checks.append(("历史业绩做T累计32.71%/持有5.82%/超额26.89%",
+                   "32.71%" in metrics[0] and "5.82%" in metrics[1] and "26.89%" in metrics[2]))
+    # 年化超额收益率 = 26.89% ÷ 1.59年(2025-01-02~2026-08-05) ≈ 16.93%
+    checks.append(("年化超额收益率≈16.93%(窗口1.6年)",
+                   "16.93%" in metrics[3] and "年(窗口内)" in metrics[3]))
     # 每日记录指标卡：3张（今日2026-08-06未触发：持有1.29%+做T0%=做T累计1.29%）
     checks.append(("每日记录指标卡=3张且均为百分比",
                    len(daily_cards) == 3 and all(re.search(pct3, m) for m in daily_cards) and
@@ -248,9 +248,9 @@ with sync_playwright() as p:
                    bool(re.search(r"合计 385 天 = 100%", status_dist or "")) and
                    "仅买14:50卖出" in (status_dist or "") and "仅买收盘恢复" not in (status_dist or "") and
                    "折算口径" not in (status_dist or "") and "理论口径" not in (status_dist or "")))
-    # 历史状态分布各类型含平均当日做T净利%（双边成交均+1.09%、仅买14:50卖出均-0.05%、未触发/低开跳过均0.00%）
-    checks.append(("历史状态分布含各类型平均收益(双边+1.09%/仅买-0.05%)",
-                   "均+1.09%" in (status_dist or "") and "均-0.05%" in (status_dist or "") and
+    # 历史状态分布各类型含平均当日做T净利%（双边成交均+1.10%、仅买14:50卖出均-0.04%、未触发/低开跳过均0.00%，佣金万0.5双边）
+    checks.append(("历史状态分布含各类型平均收益(双边+1.10%/仅买-0.04%)",
+                   "均+1.10%" in (status_dist or "") and "均-0.04%" in (status_dist or "") and
                    "均+0.00%" in (status_dist or "")))
     # 每日记录含今日行
     checks.append(("每日记录含2026-08-06", any("2026-08-06" in r for r in daily_rows)))
@@ -285,10 +285,10 @@ with sync_playwright() as p:
                    bool(yearly_head) and "做T差价净利率①" in " ".join(yearly_head) and "做T累计净利率①" in " ".join(yearly_head)))
     checks.append(("逐年收益表=2行(2025/2026)",
                    len(yearly_rows) == 2 and yearly_rows[0].startswith("2025") and yearly_rows[1].startswith("2026")))
-    checks.append(("逐年2025=持有3.78%+做T15.01%=累计18.79%",
-                   any(r.startswith("2025") and "3.78%" in r and "15.01%" in r and "18.79%" in r for r in yearly_rows)))
-    checks.append(("逐年2026=持有1.97%+做T9.43%=累计11.40%",
-                   any(r.startswith("2026") and "1.97%" in r and "9.43%" in r and "11.40%" in r for r in yearly_rows)))
+    checks.append(("逐年2025=持有3.78%+做T16.43%=累计20.22%",
+                   any(r.startswith("2025") and "3.78%" in r and "16.43%" in r and "20.22%" in r for r in yearly_rows)))
+    checks.append(("逐年2026=持有1.97%+做T10.45%=累计12.42%",
+                   any(r.startswith("2026") and "1.97%" in r and "10.45%" in r and "12.42%" in r for r in yearly_rows)))
     # 参数与纪律：策略版本v2、买入×0.997、卖出×1.008
     checks.append(("参数表含策略版本v2+买0.3%/卖0.8%",
                    bool(params) and "v2" in params and "0.997" in params and "1.008" in params and "买0.3%/卖0.8%" in params))
