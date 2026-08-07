@@ -28,7 +28,7 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    html { overflow-x: hidden; }
+    html { overflow-x: hidden; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       background: var(--bg);
@@ -660,6 +660,14 @@
 
       /* 11. 历史明细展开按钮：更大触摸目标 */
       .t0-expand-btn { padding: 13px 28px; font-size: 14px; }
+
+      /* 12. 参数与纪律：手机端取消最小宽度，说明列允许换行，12px 防iOS放大异常 */
+      .t0-params-wrap { overflow-x: visible; }
+      .t0-params-table { min-width: 0; font-size: 12px; }
+      .t0-params-table th, .t0-params-table td { white-space: normal; text-align: left; padding: 8px 6px; }
+      .t0-params-table td:first-child { white-space: nowrap; font-weight: 600; }
+      .t0-params-table td:nth-child(2) { white-space: nowrap; }
+      .ratio-ruler-note { font-size: 12px; }
     }
   </style>
 </head>
@@ -1563,8 +1571,8 @@
         const buyPct = ((1 - p.buy_k) * 100).toFixed(1);
         const sellPct = ((p.sell_k - 1) * 100).toFixed(1);
         document.getElementById('t0Params').innerHTML = `
-          <div class="table-wrap">
-            <table>
+          <div class="table-wrap t0-params-wrap">
+            <table class="t0-params-table">
               <thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead>
               <tbody>
                 <tr><td>策略版本</td><td>${p.version || 'v2'}</td><td>v2：买0.3%/卖0.8%，未卖出 14:50 了结（2026-08-06 生效）</td></tr>
