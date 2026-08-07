@@ -1,0 +1,9 @@
+{
+  "name": "fc-t0-adjust-api",
+  "version": "1.0.0",
+  "description": "做T系统实际卖出价修正数据持久化 API（阿里云 FC 3.0）",
+  "main": "index.js",
+  "dependencies": {
+    "ali-oss": "^6.23.0"
+  }
+}

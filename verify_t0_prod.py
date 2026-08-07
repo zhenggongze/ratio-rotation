@@ -77,6 +77,12 @@ with sync_playwright() as p:
         "() => Array.from(document.querySelectorAll('#t0YearlyTable tbody tr')).slice(0, 10).map(r => (r.innerText || '').replace(/\\s+/g, ' ').trim())")
     yearly_head = head("t0YearlyTable")
     params = text("t0Params")
+    # 实际卖出价输入框采集（每日记录表首行）
+    daily_input_ok = page.evaluate("""() => {
+        const inp = document.querySelector('#t0DailyBody .t0-adjust-input');
+        if (!inp) return { found: false };
+        return { found: true, val: inp.value, date: inp.dataset.date, disabled: inp.disabled, def: inp.dataset.def };
+    }""")
 
     print("\n=== 加载性能 ===")
     print("首页加载(首屏就绪): %.2f 秒" % t0_elapsed)
@@ -94,6 +100,7 @@ with sync_playwright() as p:
     print("更新时间:", daily_meta)
     print("每日记录表头:", daily_head)
     print("历史明细表头:", history_head)
+    print("实际卖出价输入框:", daily_input_ok if isinstance(daily_input_ok, dict) else daily_input_ok)
     print("历史明细首行:", history_first[0] if history_first else None)
     print("历史明细行数:", history_rows)
     print("每日状态分布:", (daily_stats or "").replace("\n", " | "))
@@ -143,11 +150,77 @@ with sync_playwright() as p:
     # 历史明细表头：12列统一维度（含买卖时间、14:50价，无折算超额列）
     checks.append(("历史明细表头=12列含买卖时间+14:50价",
                    history_head == ["日期", "状态", "买入时间", "卖出时间", "开盘", "收盘", "买入价", "卖出价", "14:50价", "成交", "当日净利(扣费)", "当日超额"]))
-    # 每日记录表头：12列（与历史明细一致）
-    checks.append(("每日记录表头=12列含买卖时间+14:50价",
-                   len(daily_head) == 12 and daily_head[2] == "买入时间" and daily_head[3] == "卖出时间" and
-                   daily_head[8] == "14:50价" and
+    # 每日记录表头：13列（历史明细12列 + 实际卖出价录入列，与历史明细维度一致并扩展）
+    checks.append(("每日记录表头=13列含实际卖出价",
+                   len(daily_head) == 13 and daily_head[2] == "买入时间" and daily_head[3] == "卖出时间" and
+                   daily_head[8] == "14:50价" and daily_head[9].startswith("实际卖出价") and
                    daily_head[1] == "状态" and "当日净利(扣费)" in daily_head and "当日超额" in daily_head))
+    # 每日记录行含实际卖出价录入框（默认=卖出价；可编辑，云端落库）
+    daily_input_ok = page.evaluate("""() => {
+        const inp = document.querySelector('#t0DailyBody .t0-adjust-input');
+        if (!inp) return { found: false };
+        return { found: true, val: inp.value, date: inp.dataset.date, disabled: inp.disabled, def: inp.dataset.def };
+    }""")
+    checks.append(("每日记录行含实际卖出价输入框", bool(daily_input_ok.get("found"))))
+    if daily_input_ok.get("found"):
+        checks.append(("实际卖出价默认=卖出价",
+                       bool(re.search(r"^\d\.\d{3}$", daily_input_ok["val"] or "")) and daily_input_ok["val"] == daily_input_ok["def"]))
+        checks.append(("实际卖出价输入框未禁用(已连接FC)", daily_input_ok["disabled"] is False))
+    # 实际卖出价录入端到端：改值→保存→FC云端确认→恢复原值
+    e2e_adj_ok = page.evaluate("""async () => {
+        const inp = document.querySelector('#t0DailyBody .t0-adjust-input');
+        if (!inp) return { ok: false, reason: 'no input' };
+        const date = inp.dataset.date;
+        const orig = inp.value;
+        // T0_FC_API 为 script 顶层 let 变量，不挂到 window，从 api_config.json 读取
+        let fc = null;
+        try {
+            const r = await fetch('api_config.json', { cache: 'no-store' });
+            const c = await r.json();
+            fc = (c.fc_api || '').replace(/\\/+$/, '');
+        } catch (e) {}
+        if (!fc) return { ok: false, reason: 'no fc api' };
+        // 1) 改为一个临时的测试值（比默认值大0.002）
+        const testVal = (Math.round((Number(orig) + 0.002) * 1000) / 1000).toFixed(3);
+        inp.value = testVal;
+        inp.dispatchEvent(new Event('change'));
+        // 2) 等待保存完成（状态元素出现 ✓已保存）
+        const st = document.getElementById('t0AdjSt_' + date);
+        const waitOk = await new Promise(res => {
+            const t0 = Date.now();
+            const iv = setInterval(() => {
+                const txt = st ? st.textContent : '';
+                if (txt.indexOf('✓已保存') >= 0 || txt.indexOf('保存失败') >= 0 || Date.now() - t0 > 8000) {
+                    clearInterval(iv); res(txt);
+                }
+            }, 200);
+        });
+        if (waitOk.indexOf('✓已保存') < 0) return { ok: false, reason: 'save not ok: ' + waitOk };
+        // 3) 通过 FC load 确认已落库
+        let saved = null;
+        try {
+            const r = await fetch(fc + '/api/t0/load', { cache: 'no-store' });
+            const d = await r.json();
+            saved = d.records && d.records[date] ? d.records[date].actual_sell_price : null;
+        } catch (e) { return { ok: false, reason: 'load failed' }; }
+        if (saved !== Number(testVal)) return { ok: false, reason: 'saved mismatch: ' + saved };
+        // 4) 恢复原值（删掉测试数据，避免污染用户真实数据）
+        inp.value = orig;
+        inp.dispatchEvent(new Event('change'));
+        const waitRestore = await new Promise(res => {
+            const t0 = Date.now();
+            const iv = setInterval(() => {
+                const txt = st ? st.textContent : '';
+                if (txt.indexOf('✓已保存') >= 0 || txt.indexOf('保存失败') >= 0 || Date.now() - t0 > 8000) {
+                    clearInterval(iv); res(txt);
+                }
+            }, 200);
+        });
+        return { ok: waitRestore.indexOf('✓已保存') >= 0, reason: 'restore: ' + waitRestore, date: date, testVal: testVal };
+    }""")
+    checks.append(("实际卖出价录入→FC云端落库→恢复原值", bool(e2e_adj_ok.get("ok")) and (not e2e_adj_ok.get("reason") or "restore" in e2e_adj_ok.get("reason", ""))))
+    if not e2e_adj_ok.get("ok"):
+        print("  ⚠ 录入端到端失败:", e2e_adj_ok.get("reason"))
     # 历史明细倒序：第一行应为最新日期 2026-08-05（日期格式与每日记录对齐 2026-08-05）
     checks.append(("历史明细倒序展示(最新在上)", bool(history_first) and history_first[0].startswith("2026-08-05")))
     # 历史明细默认收起为最近20条（手机端优化），点击「查看全部」按钮展开为385行
@@ -225,6 +298,7 @@ with sync_playwright() as p:
         print(("✓" if ok else "✗"), name)
         if not ok:
             all_pass = False
+    print("\n实际卖出价录入端到端结果:", e2e_adj_ok)
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     page.screenshot(path=OUT)

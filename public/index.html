@@ -574,6 +574,14 @@
     .t0-daily-table td.pl { color: var(--pos); }
     .t0-daily-table td.mn { color: var(--neg); }
     .t0-daily-table td.gray { color: var(--text-lighter); }
+    /* 实际卖出价录入框：默认=卖出价，用户可改，云端落库 */
+    .t0-adjust-input { width: 62px; padding: 3px 4px; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: var(--text); text-align: right; box-sizing: border-box; }
+    .t0-adjust-input:focus { outline: none; border-color: #3498db; }
+    .t0-adjust-input.saved { border-color: #27ae60; }
+    .t0-adjust-input:disabled { background: #f4f6f8; color: var(--text-lighter); cursor: not-allowed; }
+    .t0-adjust-save { display: inline-block; margin-left: 4px; font-size: 10px; white-space: nowrap; }
+    .t0-adjust-save.ok { color: var(--pos); }
+    .t0-adjust-save.err { color: #e74c3c; }
 
     /* 历史明细：展开/收起按钮 */
     .t0-expand-btn {
@@ -641,6 +649,9 @@
       .t0-daily-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: none; }
       .t0-daily-table { font-size: 11px; min-width: 520px; }
       .t0-daily-table th, .t0-daily-table td { padding: 6px 6px; }
+      /* 实际卖出价录入框：手机端更紧凑 */
+      .t0-adjust-input { width: 54px; padding: 2px 2px; font-size: 11px; }
+      .t0-adjust-save { font-size: 9px; }
 
       /* 6. 状态分布图例：更紧凑 */
       .t0-status-legend { gap: 4px 10px; font-size: 11px; }
@@ -807,6 +818,7 @@
                 <th>买入价</th>
                 <th>卖出价</th>
                 <th>14:50价</th>
+                <th>实际卖出价<sup class="t0-badge-idx" title="默认=卖出价，可手动修改；仅买14:50卖出遇到滑点时按实际成交价录入，保存后云端落库，刷新/换设备不丢">✎</sup></th>
                 <th>成交</th>
                 <th>当日净利(扣费)</th>
                 <th>当日超额</th>
@@ -905,6 +917,72 @@
     let currentTab = 't0';
     let chartInstance = null;
     let returnChartInstance = null;
+
+    // ===== 实际卖出价录入（用户可改，FC+OSS 云端落库，刷新/换设备不丢） =====
+    let T0_FC_API = null;        // FC 云端 API 地址（public/api_config.json 提供，与持仓系统同机制）
+    let t0Adjustments = {};      // date → { actual_sell_price }，从 FC /api/t0/load 拉取
+    // 加载 FC 配置与已保存的实际卖出价修正记录
+    async function initT0Adjust() {
+      try {
+        const cfgResp = await fetch('api_config.json', { cache: 'no-store' });
+        const cfg = await cfgResp.json();
+        T0_FC_API = (cfg.fc_api || '').replace(/\/+$/, '');
+      } catch (e) {
+        T0_FC_API = null;
+      }
+      if (!T0_FC_API) return;
+      try {
+        const resp = await fetch(T0_FC_API + '/api/t0/load', { cache: 'no-store' });
+        const data = await resp.json();
+        if (data && data.records) t0Adjustments = data.records;
+      } catch (e) {
+        // 拉取失败时保持空记录；输入框会因 T0_FC_API 未连上而禁用，避免"以为存了其实丢了"
+      }
+    }
+    // 保存单日实际卖出价到 FC（OSS 落库 + 永不删除备份）
+    async function saveT0Adjust(input, date) {
+      const price = Number(input.value);
+      const statusEl = document.getElementById('t0AdjSt_' + date);
+      const defVal = Number(input.dataset.def);
+      const setStatus = (txt, cls) => { if (statusEl) { statusEl.textContent = txt; statusEl.className = 't0-adjust-save' + (cls ? ' ' + cls : ''); } };
+      // 输入合法性校验
+      if (!isFinite(price) || price <= 0 || price > 100) {
+        setStatus('无效', 'err');
+        input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
+        return;
+      }
+      if (!T0_FC_API) {
+        setStatus('未连接', 'err');
+        input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
+        return;
+      }
+      // 与已存值相同则无需重复保存
+      if (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null && Number(t0Adjustments[date]) === price) {
+        setStatus('已保存', 'ok');
+        return;
+      }
+      setStatus('保存中…', '');
+      try {
+        const resp = await fetch(T0_FC_API + '/api/t0/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: date, actual_sell_price: price })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          t0Adjustments[date] = Math.round(price * 1000) / 1000;
+          input.classList.add('saved');
+          setStatus('✓已保存', 'ok');
+          setTimeout(() => setStatus('', ''), 3000);
+        } else {
+          setStatus(data.error || '保存失败', 'err');
+          input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
+        }
+      } catch (e) {
+        setStatus('保存失败', 'err');
+        input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
+      }
+    }
 
     // 加载数据
     async function loadData() {
@@ -1663,7 +1741,7 @@
     }
 
     // 生成每日明细行 HTML（每日记录与历史每日明细共用；showTime=true 时输出买卖时间列）
-    function buildT0RowsHTML(records, showTime) {
+    function buildT0RowsHTML(records, showTime, showAdjust) {
       return records.map(r => {
         const statusCls = r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || r.status === '仅买14:50卖出') ? 'warn' : 'gray';
@@ -1681,6 +1759,20 @@
         const timeCells = showTime ? `<td>${r.buy_time || '—'}</td><td>${r.sell_time || '—'}</td>` : '';
         // 14:50时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
         const rp1450 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
+        // 实际卖出价：默认=卖出价；若该日已录入过则显示已录入值；支持手动修改并云端落库
+        let adjustCell = '';
+        if (showAdjust) {
+          const defVal = (r.sell_p === null || r.sell_p === undefined) ? '' : Number(r.sell_p).toFixed(3);
+          const saved = t0Adjustments[r.date];
+          const val = (saved !== undefined && saved !== null) ? Number(saved).toFixed(3) : defVal;
+          adjustCell = `<td class="t0-adjust-cell">
+            <input class="t0-adjust-input${saved !== undefined ? ' saved' : ''}" type="number" step="0.001" min="0" max="100"
+              value="${val}" data-date="${r.date}" data-def="${defVal}"
+              ${T0_FC_API ? '' : 'disabled title="未连接云端保存服务，录入不会持久化"'}
+              onchange="saveT0Adjust(this,'${r.date}')">
+            <span class="t0-adjust-save" id="t0AdjSt_${r.date}"></span>
+          </td>`;
+        }
         return `<tr>
           <td>${fmtDate(r.date)}</td>
           <td><span class="t0-status-tag ${statusCls}">${r.status}</span></td>
@@ -1690,6 +1782,7 @@
           <td>${Number(r.buy_p).toFixed(3)}</td>
           <td>${Number(r.sell_p).toFixed(3)}</td>
           <td>${rp1450}</td>
+          ${adjustCell}
           <td>${trade}</td>
           <td class="${netCls}">${fmtPct(dayNet)}</td>
           <td class="${exCls}">${fmtPct(dayEx)}</td>
@@ -1778,7 +1871,7 @@
           { label: '待收盘', count: pend, color: '#f1c40f', avg: statAvg('待收盘') }
         ]);
       }
-      body.innerHTML = buildT0RowsHTML([...records].reverse(), true); // 最新在上（含买卖时间）
+      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, true); // 最新在上（含买卖时间）+ 实际卖出价录入列
     }
 
     // 渲染历史业绩全周期每日明细（默认只显示最近 20 条，按钮展开全部，避免手机端下拉过长）
@@ -1881,6 +1974,10 @@
         } else {
           renderAll(cybData);
         }
+        // 实际卖出价：后台加载云端已保存记录（FC+OSS），完成后重渲染每日记录表以显示已录入值
+        initT0Adjust().then(() => {
+          if (t0Data && t0Data.daily) renderT0Daily(t0Data.daily);
+        });
       } catch (e) {
         document.getElementById('loading').innerHTML = '数据加载失败：' + e.message + '<br>请确保 frontend_data.json 存在';
       }
