@@ -91,9 +91,9 @@ function formatSignalText(sig) {
   const buyPct = ((1 - T0_CONFIG.BUY_K) * 100).toFixed(1);      // v2 买 -0.3%
   const sellPct = ((T0_CONFIG.SELL_K - 1) * 100).toFixed(1);    // v2 卖 +0.8%
   L.push(`昨收${sig.prev_close.toFixed(3)} 今开${sig.open.toFixed(3)}（${gapDesc}）`);
-  L.push(`买入挂 ${sig.buy_p.toFixed(3)}（跌${buyPct}%触发）`);
-  L.push(`卖出挂 ${sig.sell_p.toFixed(3)}（涨${sellPct}%触发）`);
-  L.push(`委托「即时限价」：先挂买入→成交后再挂卖出；14:50 未卖手动了结`);
+  L.push(`买入：${sig.buy_p.toFixed(3)}（开盘价跌${buyPct}%）`);
+  L.push(`卖出：${sig.sell_p.toFixed(3)}（开盘价涨${sellPct}%）`);
+  L.push(`「限价委托」+「即时现价」`);
   return L.join('\n');
 }
 
