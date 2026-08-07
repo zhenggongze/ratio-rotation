@@ -574,6 +574,20 @@
     .t0-daily-table td.pl { color: var(--pos); }
     .t0-daily-table td.mn { color: var(--neg); }
     .t0-daily-table td.gray { color: var(--text-lighter); }
+
+    /* 历史明细：展开/收起按钮 */
+    .t0-expand-btn {
+      padding: 10px 24px;
+      font-size: 13px;
+      color: var(--pos);
+      background: #fdf2f2;
+      border: 1px solid #f5c6c6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .t0-expand-btn:hover { background: #fbe5e5; }
+    .t0-expand-btn:active { background: #f8d8d8; }
     .t0-status-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
     .t0-status-tag.ok { background: rgba(231, 76, 60, 0.1); color: var(--pos); }
     .t0-status-tag.warn { background: rgba(243, 156, 18, 0.12); color: #b9770e; }
@@ -643,6 +657,9 @@
 
       /* 10. 信号卡 badge 缩小 */
       .t0-badge { font-size: 12px; padding: 5px 12px; }
+
+      /* 11. 历史明细展开按钮：更大触摸目标 */
+      .t0-expand-btn { padding: 13px 28px; font-size: 14px; }
     }
   </style>
 </head>
@@ -833,6 +850,9 @@
             </thead>
             <tbody id="t0HistoryDailyBody"></tbody>
           </table>
+        </div>
+        <div id="t0HistoryExpand" style="text-align:center; margin-top:10px; display:none;">
+          <button id="t0HistoryExpandBtn" onclick="toggleT0HistoryExpand()" class="t0-expand-btn">查看全部明细</button>
         </div>
 
         <!-- 历史业绩数据口径说明面板（角标 ①② 的详细解释与公式，点击角标可定位到此，默认收缩） -->
@@ -1547,12 +1567,12 @@
                 <tr><td>委托仓位</td><td>${(p.capital / 10000).toFixed(0)}万</td><td>每日固定做T委托金额</td></tr>
                 <tr><td>佣金</td><td>万${p.commission_rate * 10000}</td><td>双边计费基准</td></tr>
                 <tr><td>跳过条件</td><td>低开超${p.skip_drop * 100}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
-                <tr><td>执行方式</td><td>先买后卖</td><td>条件单委托价选「即时限价」=触发瞬间最新价挂限价单（买成交≤监控价/卖成交≥监控价，匹配回测）；手动挂单则限价直接填监控价。正T保护不卖底仓</td></tr>
+                <tr><td>执行方式</td><td>先买后卖</td><td>条件单选「限价委托」+价格类型「即时现价」=触发瞬间按最新价挂限价单（买成交≤监控价/卖成交≥监控价，匹配回测）；手动挂单则限价直接填监控价。正T保护不卖底仓</td></tr>
                 <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 手动市价卖出等量，不过夜</td></tr>
               </tbody>
             </table>
           </div>
-          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单委托价选<strong>「即时限价」</strong>（触发瞬间以最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，实测 0.001 滑点即可使做T收益从 +24.44% 变为 -11.53%。卖出单务必等买入成交后再挂。</div>
+          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，实测 0.001 滑点即可使做T收益从 +24.44% 变为 -11.53%。卖出单务必等买入成交后再挂。</div>
           <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有；v2 买-${buyPct}%/卖+${sellPct}%（1.1%价差）基于385天真实1分钟数据验证（真实双边占比89.2%，胜率60%），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。</div>
         `;
       } else {
@@ -1738,15 +1758,39 @@
       body.innerHTML = buildT0RowsHTML([...records].reverse(), true); // 最新在上（含买卖时间）
     }
 
-    // 渲染历史业绩全周期每日明细
+    // 渲染历史业绩全周期每日明细（默认只显示最近 20 条，按钮展开全部，避免手机端下拉过长）
+    let t0HistoryExpanded = false;
+    const T0_HISTORY_PREVIEW = 20;
     function renderT0HistoryDaily(bt) {
       const body = document.getElementById('t0HistoryDailyBody');
+      const wrap = document.getElementById('t0HistoryExpand');
+      const btn = document.getElementById('t0HistoryExpandBtn');
       if (!body) return;
       if (!bt || !bt.daily || bt.daily.length === 0) {
         body.innerHTML = '<tr><td colspan="11" class="gray" style="text-align:center;padding:18px;">每日明细未生成（重新生成回测后更新）</td></tr>';
+        if (wrap) wrap.style.display = 'none';
         return;
       }
-      body.innerHTML = buildT0RowsHTML([...bt.daily].reverse(), true);
+      const rows = [...bt.daily].reverse();
+      const total = rows.length;
+      // 无数据/总数不超过预览数 → 不显示按钮，全量渲染
+      if (total <= T0_HISTORY_PREVIEW) {
+        body.innerHTML = buildT0RowsHTML(rows, true);
+        if (wrap) wrap.style.display = 'none';
+        return;
+      }
+      const shown = t0HistoryExpanded ? rows : rows.slice(0, T0_HISTORY_PREVIEW);
+      body.innerHTML = buildT0RowsHTML(shown, true);
+      if (wrap && btn) {
+        wrap.style.display = '';
+        btn.textContent = t0HistoryExpanded ? '收起明细' : `查看全部 ${total} 天明细`;
+      }
+    }
+
+    // 展开/收起历史明细
+    function toggleT0HistoryExpand() {
+      t0HistoryExpanded = !t0HistoryExpanded;
+      renderT0HistoryDaily(t0Backtest || (t0Data && t0Data.backtest));
     }
 
     // 页签切换

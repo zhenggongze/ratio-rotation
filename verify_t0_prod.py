@@ -149,8 +149,14 @@ with sync_playwright() as p:
                    daily_head[1] == "状态" and "当日净利(扣费)" in daily_head and "当日超额" in daily_head))
     # 历史明细倒序：第一行应为最新日期 2026-08-05（日期格式与每日记录对齐 2026-08-05）
     checks.append(("历史明细倒序展示(最新在上)", bool(history_first) and history_first[0].startswith("2026-08-05")))
-    # 历史明细行数=385（分钟级真实窗口）
-    checks.append(("历史明细行数=385", history_rows == 385))
+    # 历史明细默认收起为最近20条（手机端优化），点击「查看全部」按钮展开为385行
+    checks.append(("历史明细默认收起为20行(手机端优化)", history_rows == 20))
+    checks.append(("历史明细展开按钮存在",
+                   page.is_visible("#t0HistoryExpandBtn") and "查看全部" in (page.inner_text("#t0HistoryExpandBtn") or "")))
+    if page.is_visible("#t0HistoryExpandBtn"):
+        page.click("#t0HistoryExpandBtn")
+        page.wait_for_timeout(1000)
+        checks.append(("历史明细展开后=385行", page.locator("#t0HistoryDailyBody tr").count() == 385))
     # 历史明细首行含买卖时间（09:33 / 15:00 之类）
     checks.append(("历史明细行含精确到分钟的买卖时间",
                    bool(history_first) and bool(re.search(r"\d{2}:\d{2}", history_first[0]))))
