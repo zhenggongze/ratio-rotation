@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-07 08:07:04",
+  "updated_at": "2026-08-07 17:16:47",
   "count": 2,
   "records": [
     {
@@ -27,26 +27,27 @@
     },
     {
       "date": "2026-08-07",
-      "prev_close": 1.399,
-      "open": 1.398,
-      "buy_p": 1.393,
-      "sell_p": 1.409,
-      "close": 1.417,
-      "gap_pct": -0.07,
-      "shares": 357600,
-      "status": "待收盘",
-      "buy_filled": null,
-      "sell_filled": null,
-      "gross": null,
-      "commission": null,
-      "trades": null,
-      "net": null,
-      "hold_pct": null,
-      "net_pct": null,
-      "excess_pct": null,
-      "buy_time": null,
-      "sell_time": null,
-      "cum_net": null
+      "prev_close": 1.417,
+      "open": 1.414,
+      "buy_p": 1.409,
+      "sell_p": 1.425,
+      "close": 1.414,
+      "gap_pct": -0.21,
+      "shares": 353600,
+      "status": "仅买14:50卖出",
+      "buy_filled": true,
+      "sell_filled": false,
+      "buy_time": "09:31",
+      "sell_time": "14:50",
+      "recover_price": 1.413,
+      "gross": 1414.4,
+      "commission": 49.89,
+      "trades": 2,
+      "net": 1364.51,
+      "hold_pct": -0.21,
+      "net_pct": 0.27,
+      "excess_pct": 0.48,
+      "cum_net": 1364.51
     }
   ]
 }

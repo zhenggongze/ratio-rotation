@@ -1769,10 +1769,12 @@
         const timeCells = showTime ? `<td>${r.buy_time || '—'}</td><td>${r.sell_time || '—'}</td>` : '';
         // 14:50时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
         const rp1450 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
-        // 实际卖出价：默认=卖出价；若该日已录入过则显示已录入值；支持手动修改并云端落库
+        // 实际卖出价：默认=真实成交价——仅买14:50卖出日取当日14:50价（recover_price，与当日净利计算同价），其余日取卖出监控价；支持手动修改并云端落库
         let adjustCell = '';
         if (showAdjust) {
-          const defVal = (r.sell_p === null || r.sell_p === undefined) ? '' : Number(r.sell_p).toFixed(3);
+          const defVal = (r.status === '仅买14:50卖出' && r.recover_price != null)
+            ? Number(r.recover_price).toFixed(3)
+            : ((r.sell_p === null || r.sell_p === undefined) ? '' : Number(r.sell_p).toFixed(3));
           const saved = t0Adjustments[r.date];
           const val = (saved !== undefined && saved !== null) ? Number(saved).toFixed(3) : defVal;
           adjustCell = `<td class="t0-adjust-cell">

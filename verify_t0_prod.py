@@ -142,8 +142,8 @@ with sync_playwright() as p:
                    strip_badge(daily_cards[0]).startswith("做T累计净利(扣手续费)") and
                    strip_badge(daily_cards[1]).startswith("持有净利(一直拿着)") and
                    strip_badge(daily_cards[2]).startswith("累计超额收益")))
-    checks.append(("每日记录做T累计净利1.29%/超额0.00%",
-                   "1.29%" in daily_cards[0] and bool(re.search(r"超额收益\s*0\.00%", daily_cards[2]))))
+    checks.append(("每日记录做T累计净利1.35%/超额0.27%",
+                   "1.35%" in daily_cards[0] and bool(re.search(r"超额收益\s*0\.27%", daily_cards[2]))))
     # 每日记录 meta：日期范围~日期范围 时间，N个交易日
     checks.append(("每日记录更新时间格式(日期范围+秒级+交易日数)",
                    bool(re.search(r"\d{4}-\d{2}-\d{2}~\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}，\d+个交易日", daily_meta or ""))))
@@ -167,8 +167,9 @@ with sync_playwright() as p:
     }""")
     checks.append(("每日记录行含实际卖出价输入框", bool(daily_input_ok.get("found"))))
     if daily_input_ok.get("found"):
-        checks.append(("实际卖出价默认=卖出价",
-                       bool(re.search(r"^\d\.\d{3}$", daily_input_ok["val"] or "")) and daily_input_ok["val"] == daily_input_ok["def"]))
+        checks.append(("实际卖出价默认=真实成交价(仅买日取14:50价)",
+                   bool(re.search(r"^\d\.\d{3}$", daily_input_ok["val"] or "")) and daily_input_ok["val"] == daily_input_ok["def"] and
+                   daily_input_ok["val"] == "1.413"))
         checks.append(("实际卖出价输入框未禁用(已连接FC)", daily_input_ok["disabled"] is False))
     # 实际卖出价录入端到端：改值→保存→FC云端确认→恢复原值
     e2e_adj_ok = page.evaluate("""async () => {
