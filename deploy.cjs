@@ -171,6 +171,7 @@ async function main() {
     { local: 'api_config.json', oss: OSS_PREFIX + 'api_config.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache' },
     { local: 'frontend_data.json', oss: OSS_PREFIX + 'frontend_data.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache', gzip: true },
     { local: 't0_backtest.json', oss: OSS_PREFIX + 't0_backtest.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache', gzip: true },
+    { local: 't0_backtest_cyb.json', oss: OSS_PREFIX + 't0_backtest_cyb.json', contentType: 'application/json; charset=utf-8', cache: 'no-cache', gzip: true },
     { local: 'vendor/chart.umd.min.js', oss: OSS_PREFIX + 'vendor/chart.umd.min.js', contentType: 'application/javascript; charset=utf-8', cache: 'public, max-age=604800' }
   ];
 
@@ -329,6 +330,7 @@ async function main() {
     `https://${CDN_DOMAIN}/${prefixPath}/api_config.json`,
     `https://${CDN_DOMAIN}/${prefixPath}/frontend_data.json`,
     `https://${CDN_DOMAIN}/${prefixPath}/t0_backtest.json`,
+    `https://${CDN_DOMAIN}/${prefixPath}/t0_backtest_cyb.json`,
     `https://${CDN_DOMAIN}/${prefixPath}/vendor/chart.umd.min.js`
   ];
 

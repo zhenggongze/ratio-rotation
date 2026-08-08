@@ -241,6 +241,31 @@ function exportFrontendData() {
     daily: t0Daily              // { updated_at, count, records: [...] }
   };
 
+  // 创业板(159915) 做T数据（观察期模块，结构与红利 t0 一致；回测独立文件 t0_backtest_cyb.json）
+  let t0CybSignal = null;
+  const t0CybSignalFile = path.join(config.dataDir, 't0', 't0_signal_cyb.json');
+  if (fs.existsSync(t0CybSignalFile)) {
+    try {
+      t0CybSignal = JSON.parse(fs.readFileSync(t0CybSignalFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取创业板做T信号失败: ${e.message}`);
+    }
+  }
+  let t0CybDaily = null;
+  const t0CybDailyFile = path.join(config.dataDir, 't0', 't0_daily_cyb.json');
+  if (fs.existsSync(t0CybDailyFile)) {
+    try {
+      t0CybDaily = JSON.parse(fs.readFileSync(t0CybDailyFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取创业板做T每日记录失败: ${e.message}`);
+    }
+  }
+  const t0CybDims = {
+    signal: t0CybSignal,
+    daily: t0CybDaily
+  };
+  // 创业板回测 slim 已由 t0_engine_cyb.cjs 生成到 public/t0_backtest_cyb.json（前端按需加载）
+
   // 做T回测数据拆分到独立文件 t0_backtest.json（首页不加载，点击做T页签时按需 fetch）
   // 每日明细字段瘦身：只保留前端表格渲染所需字段（完整字段仍保留在 data/t0/t0_backtest.json 供回测脚本使用）
   let t0BacktestSlim = null;
@@ -263,12 +288,39 @@ function exportFrontendData() {
     console.log(`  做T回测已拆分: ${t0BTPath} (${(fs.statSync(t0BTPath).size / 1024).toFixed(1)} KB)`);
   }
 
+  // 创业板做T回测 slim → public/t0_backtest_cyb.json（前端按需加载；完整版在 data/t0/cyb_backtest.json 由 t0_engine_cyb.cjs 生成）
+  const t0CybBacktestFile = path.join(config.dataDir, 't0', 'cyb_backtest.json');
+  if (fs.existsSync(t0CybBacktestFile)) {
+    try {
+      const cybBt = JSON.parse(fs.readFileSync(t0CybBacktestFile, 'utf-8'));
+      const cybSlim = {
+        summary: cybBt.summary,
+        yearly: cybBt.yearly,
+        param: cybBt.param,
+        daily: cybBt.daily.map(r => ({
+          date: r.date, status: r.status, open: r.open, close: r.close,
+          buy_p: r.buy_p, sell_p: r.sell_p,
+          buy_filled: r.buy_filled, sell_filled: r.sell_filled,
+          buy_time: r.buy_time || null, sell_time: r.sell_time || null,
+          hold_pct: r.hold_pct, net_pct: r.net_pct, excess_pct: r.excess_pct,
+          recover_price: r.recover_price != null ? r.recover_price : null
+        }))
+      };
+      const cybBTPath = path.join(__dirname, 'public', 't0_backtest_cyb.json');
+      fs.writeFileSync(cybBTPath, JSON.stringify(cybSlim), 'utf-8');
+      console.log(`  创业板做T回测已拆分: ${cybBTPath} (${(fs.statSync(cybBTPath).size / 1024).toFixed(1)} KB)`);
+    } catch (e) {
+      console.log(`  ⚠ 创业板做T回测拆分失败: ${e.message}`);
+    }
+  }
+
   // 组装输出
   const output = {
     generated_at: new Date().toISOString(),
     ...cybDims,
     kcb: kcbDims,
-    t0: t0Dims
+    t0: t0Dims,
+    t0_cyb: t0CybDims
   };
 
   // 写入文件（压缩格式，减小体积）

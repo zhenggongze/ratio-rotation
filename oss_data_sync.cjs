@@ -41,7 +41,12 @@ const DATA_FILES = [
   't0/515180_1min_2025_2026.json',
   't0/t0_backtest.json',
   't0/t0_signal.json',
-  't0/t0_daily.json'
+  't0/t0_daily.json',
+  // 创业板(159915) 做T数据
+  't0/159915_5min_merged.json',
+  't0/cyb_backtest.json',
+  't0/t0_signal_cyb.json',
+  't0/t0_daily_cyb.json'
 ];
 
 const DATA_DIR = path.join(__dirname, 'data');

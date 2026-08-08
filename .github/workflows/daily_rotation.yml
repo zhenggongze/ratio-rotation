@@ -77,6 +77,11 @@ jobs:
           fi
           node workflow_logger.cjs --record "做T每日记录" "success"
 
+      - name: 更新创业板做T每日记录（159915 今日行情 → t0_daily_cyb.json）
+        if: ${{ ! inputs.skip_pipeline }}
+        run: |
+          node t0_cyb_daily.cjs
+
       - name: 运行每日任务（采集数据+信号判定+收益计算+推送）
         if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |

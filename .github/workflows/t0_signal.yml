@@ -63,6 +63,7 @@ jobs:
         run: |
           node workflow_logger.cjs --record "回测数据" "running"
           node -e "require('./t0_engine.cjs').buildBacktestJson()"
+          node t0_engine_cyb.cjs
           node workflow_logger.cjs --record "回测数据" "success"
 
       - name: 计算今日做T信号并推送 PushDeer
@@ -81,6 +82,11 @@ jobs:
           node workflow_logger.cjs --record "做T信号" "success" "$summary"
         env:
           PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+
+      - name: 计算创业板(159915)今日做T信号
+        if: ${{ inputs.force_refresh || steps.id_check.outcome != 'success' }}
+        run: |
+          node t0_cyb_signal.cjs
 
       - name: 上传数据到 OSS（状态持久化）
         run: |
