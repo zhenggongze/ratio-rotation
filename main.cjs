@@ -24,7 +24,7 @@ const { exportFrontendData } = require('./export_frontend_data.cjs');
 // 规格7.1节：每交易日15:30执行
 // 时序：T日收盘后采集数据 → 判定信号 → 计算收益 → 记录 → 推送
 // T日推送的是"T+1开盘操作"，T+1日的cyb_weight才是w_target
-// 双策略并行：创业板/红利 + 科创50/红利，统一推送一条合并消息
+// 当前生产仅启用 创业板/红利 轮动（科创50/红利已暂停）
 // ============================================================
 async function runDaily(dateArg, options) {
   options = options || {};
@@ -35,7 +35,7 @@ async function runDaily(dateArg, options) {
   console.log(`每日运行 — 日期: ${today}`);
   console.log('='.repeat(60));
 
-  // 双策略配置
+  // 策略配置（当前生产仅启用 创业板/红利 轮动；科创50/红利 已暂停使用）
   const strats = [
     {
       name: 'cyb',
@@ -47,17 +47,6 @@ async function runDaily(dateArg, options) {
       title: '创红轮动',
       idxName: '创',
       idxLabel: '创业板'
-    },
-    {
-      name: 'kcb',
-      label: '科创50/红利',
-      cfg: config.kcb,
-      dataFile: config.kcb.dataFile,
-      fetchFn: fetchKcbDailyData,
-      stratConfigFn: getKcbStrategyConfig,
-      title: '科红轮动',
-      idxName: '科',
-      idxLabel: '科创50'
     }
   ];
 
@@ -109,10 +98,10 @@ async function runDaily(dateArg, options) {
     }
   }
 
-  // 统一推送（合并双策略消息，用空行分隔）
+  // 统一推送
   if (!skipPush && pushParts.length > 0) {
     console.log('\n' + '='.repeat(60));
-    console.log('合并推送（双策略）');
+    console.log('推送');
     console.log('='.repeat(60));
     const mergedMsg = pushParts.join('\n\n');
     console.log('推送内容:');
