@@ -99,6 +99,12 @@ function recomputeCum(data) {
   return data;
 }
 
+// 周末（周六/周日）为 A 股非交易日
+function isWeekend(d) {
+  const w = new Date(d + 'T00:00:00Z').getUTCDay();
+  return w === 0 || w === 6;
+}
+
 // ---- 模式1：初始化历史记录（用本地 pytdx 5分钟数据 2024-07~2026-08，与回测同源同口径） ----
 function initFromLocal() {
   const src = path.join(__dirname, 'data', 't0', '588000_5min_pytdx.json');
@@ -130,6 +136,8 @@ async function updateDaily() {
   console.log('='.repeat(52));
   console.log('  588000 科创50ETF 做T每日记录更新');
   console.log('='.repeat(52));
+  // 周末非交易日直接跳过（不生成"待收盘"占位记录）
+  if (isWeekend(beijingDate())) { console.log('✗ 今日为周末，非交易日，跳过'); process.exit(0); }
   const quote = await fetchQuote();
   console.log(`  ${quote.name}  当前价: ${quote.price}  开盘: ${quote.open}  高: ${quote.high}  低: ${quote.low}`);
 
@@ -163,6 +171,8 @@ async function updateDaily() {
   }
 
   const data = loadDaily();
+  // 清理周末"待收盘"占位记录（周末为非交易日，不产生真实记录）
+  data.records = data.records.filter(r => !(r.status === '待收盘' && isWeekend(r.date)));
   const idx = data.records.findIndex(r => r.date === record.date);
   if (idx >= 0) data.records[idx] = record; else data.records.push(record);
   data.records.sort((a, b) => a.date < b.date ? -1 : 1);

@@ -101,6 +101,12 @@ function recomputeCum(data) {
   return data;
 }
 
+// 周末（周六/周日）为 A 股非交易日
+function isWeekend(d) {
+  const w = new Date(d + 'T00:00:00Z').getUTCDay();
+  return w === 0 || w === 6;
+}
+
 // ---- 模式1：初始化历史记录（用本地 pytdx 1分钟数据 2026-05~08） ----
 function initFromLocal() {
   const src = path.join(__dirname, 'data', 't0', '159915_1min_pytdx.json');
@@ -137,6 +143,8 @@ async function updateDaily() {
   console.log('='.repeat(52));
   console.log('  159915 创业板ETF 做T每日记录更新');
   console.log('='.repeat(52));
+  // 周末非交易日直接跳过（不生成"待收盘"占位记录）
+  if (isWeekend(beijingDate())) { console.log('✗ 今日为周末，非交易日，跳过'); process.exit(0); }
   const quote = await fetchQuote();
   console.log(`  ${quote.name}  当前价: ${quote.price}  开盘: ${quote.open}  高: ${quote.high}  低: ${quote.low}`);
 
@@ -172,7 +180,7 @@ async function updateDaily() {
   const data = loadDaily();
   // 清理 START_DATE 之前的旧记录（每日记录起点=观察期启用日，此前数据归历史业绩回测）
   // 每日更新也执行清理：CI 从 OSS 下载到的历史全量记录会被裁剪到起点之后
-  data.records = data.records.filter(r => r.date >= START_DATE);
+  data.records = data.records.filter(r => r.date >= START_DATE && !(r.status === '待收盘' && isWeekend(r.date)));
   const idx = data.records.findIndex(r => r.date === record.date);
   if (idx >= 0) data.records[idx] = record; else data.records.push(record);
   data.records.sort((a, b) => a.date < b.date ? -1 : 1);
