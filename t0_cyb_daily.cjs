@@ -143,8 +143,18 @@ async function updateDaily() {
   console.log('='.repeat(52));
   console.log('  159915 创业板ETF 做T每日记录更新');
   console.log('='.repeat(52));
-  // 周末非交易日直接跳过（不生成"待收盘"占位记录）
-  if (isWeekend(beijingDate())) { console.log('✗ 今日为周末，非交易日，跳过'); process.exit(0); }
+  // 先加载并清理（无论是否交易日都执行，保证 CI 幂等）：
+  //  ① START_DATE 之前的旧记录裁剪（起点=观察期启用日，此前归历史业绩回测）
+  //  ② 周末"待收盘"占位记录删除（周末为非交易日）
+  const data = loadDaily();
+  data.records = data.records.filter(r => r.date >= START_DATE && !(r.status === '待收盘' && isWeekend(r.date)));
+  // 周末非交易日：清理后直接保存退出（不生成"待收盘"占位记录）
+  if (isWeekend(beijingDate())) {
+    recomputeCum(data);
+    saveDaily(data);
+    console.log('✗ 今日为周末，非交易日，跳过（已清理周末待收盘占位）');
+    process.exit(0);
+  }
   const quote = await fetchQuote();
   console.log(`  ${quote.name}  当前价: ${quote.price}  开盘: ${quote.open}  高: ${quote.high}  低: ${quote.low}`);
 
@@ -177,10 +187,6 @@ async function updateDaily() {
     record = computeMinuteDailyCyb(today, dayBars, quote.prev_close);
   }
 
-  const data = loadDaily();
-  // 清理 START_DATE 之前的旧记录（每日记录起点=观察期启用日，此前数据归历史业绩回测）
-  // 每日更新也执行清理：CI 从 OSS 下载到的历史全量记录会被裁剪到起点之后
-  data.records = data.records.filter(r => r.date >= START_DATE && !(r.status === '待收盘' && isWeekend(r.date)));
   const idx = data.records.findIndex(r => r.date === record.date);
   if (idx >= 0) data.records[idx] = record; else data.records.push(record);
   data.records.sort((a, b) => a.date < b.date ? -1 : 1);
