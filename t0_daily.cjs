@@ -52,6 +52,12 @@ function beijingNowStr() {
   return `${iso.slice(0, 10)} ${iso.slice(11, 19)}`;
 }
 
+// 周末（周六/周日）为 A 股非交易日
+function isWeekend(d) {
+  const w = new Date(d + 'T00:00:00Z').getUTCDay();
+  return w === 0 || w === 6;
+}
+
 // ============================================================
 // 拉取腾讯当日 1 分钟 K 线（mkline，含 OHLC，与历史回测同一判定口径）
 // 返回: [{ date, time, open, close, high, low }, ...]（最近320条，含当日全天）
@@ -100,6 +106,28 @@ async function main() {
   console.log('  515180 做T每日记录更新');
   console.log('='.repeat(52));
 
+  // 先加载并清理周末"待收盘"占位记录（无论是否交易日都执行，保证 CI 幂等）
+  let data = { updated_at: '', count: 0, records: [] };
+  if (fs.existsSync(DAILY_FILE)) {
+    try { data = JSON.parse(fs.readFileSync(DAILY_FILE, 'utf-8')); } catch (e) { data = { updated_at: '', count: 0, records: [] }; }
+  }
+  if (!Array.isArray(data.records)) data.records = [];
+  data.records = data.records.filter(r => !(r.status === '待收盘' && isWeekend(r.date)));
+  // 周末非交易日：清理后保存退出（不生成"待收盘"占位记录）
+  if (isWeekend(beijingDate())) {
+    let cum = 0;
+    data.records.forEach(r => {
+      if (typeof r.net === 'number') { cum += r.net; r.cum_net = Math.round(cum * 100) / 100; }
+      else r.cum_net = null;
+    });
+    data.count = data.records.length;
+    data.updated_at = beijingNowStr();
+    fs.mkdirSync(path.dirname(DAILY_FILE), { recursive: true });
+    fs.writeFileSync(DAILY_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    console.log('✗ 今日为周末，非交易日，跳过（已清理周末待收盘占位）');
+    process.exit(0);
+  }
+
   let quote;
   try {
     quote = await fetchQuote();
@@ -138,13 +166,6 @@ async function main() {
     }
     record = buildMinuteRecord(today, m1, quote.prev_close);
   }
-
-  // 读取已有记录（首次运行创建）
-  let data = { updated_at: '', count: 0, records: [] };
-  if (fs.existsSync(DAILY_FILE)) {
-    try { data = JSON.parse(fs.readFileSync(DAILY_FILE, 'utf-8')); } catch (e) { data = { updated_at: '', count: 0, records: [] }; }
-  }
-  if (!Array.isArray(data.records)) data.records = [];
 
   // 按 date 幂等覆盖
   const idx = data.records.findIndex(r => r.date === record.date);
