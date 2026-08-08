@@ -46,7 +46,12 @@ const DATA_FILES = [
   't0/159915_5min_merged.json',
   't0/cyb_backtest.json',
   't0/t0_signal_cyb.json',
-  't0/t0_daily_cyb.json'
+  't0/t0_daily_cyb.json',
+  // 科创50(588000) 做T数据
+  't0/588000_5min_pytdx.json',
+  't0/kcb_backtest.json',
+  't0/t0_signal_kcb.json',
+  't0/t0_daily_kcb.json'
 ];
 
 const DATA_DIR = path.join(__dirname, 'data');

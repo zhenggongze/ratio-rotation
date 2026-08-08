@@ -1,0 +1,53 @@
+{
+  "updated_at": "2026-08-08 14:27:25",
+  "count": 2,
+  "records": [
+    {
+      "date": "2026-08-06",
+      "prev_close": null,
+      "open": 3.497,
+      "buy_p": 3.476,
+      "sell_p": 3.521,
+      "close": 3.54,
+      "gap_pct": 0,
+      "shares": 142900,
+      "status": "双边成交",
+      "buy_filled": true,
+      "sell_filled": true,
+      "buy_time": "09:33",
+      "sell_time": "09:47",
+      "recover_price": 3.521,
+      "gross": 6430.5,
+      "commission": 49.99,
+      "trades": 2,
+      "net": 6380.51,
+      "hold_pct": 0,
+      "net_pct": 1.28,
+      "excess_pct": 1.28,
+      "cum_net": 6380.51
+    },
+    {
+      "date": "2026-08-07",
+      "prev_close": 3.54,
+      "open": 3.54,
+      "buy_p": 3.518,
+      "sell_p": 3.564,
+      "close": 3.586,
+      "gap_pct": 0,
+      "shares": 141200,
+      "status": "未触发",
+      "buy_filled": false,
+      "sell_filled": false,
+      "gross": 0,
+      "commission": 0,
+      "trades": 0,
+      "net": 0,
+      "hold_pct": 1.3,
+      "net_pct": 0,
+      "excess_pct": -1.3,
+      "buy_time": null,
+      "sell_time": null,
+      "cum_net": 6380.51
+    }
+  ]
+}

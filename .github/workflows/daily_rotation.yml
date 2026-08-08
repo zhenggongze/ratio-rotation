@@ -82,6 +82,11 @@ jobs:
         run: |
           node t0_cyb_daily.cjs
 
+      - name: 更新科创50做T每日记录（588000 今日行情 → t0_daily_kcb.json）
+        if: ${{ ! inputs.skip_pipeline }}
+        run: |
+          node t0_kcb_daily.cjs
+
       - name: 运行每日任务（采集数据+信号判定+收益计算+推送）
         if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |

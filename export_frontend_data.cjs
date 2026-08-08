@@ -266,6 +266,31 @@ function exportFrontendData() {
   };
   // 创业板回测 slim 已由 t0_engine_cyb.cjs 生成到 public/t0_backtest_cyb.json（前端按需加载）
 
+  // 科创50(588000) 做T数据（观察期模块，结构与红利 t0 一致；回测独立文件 t0_backtest_kcb.json）
+  let t0KcbSignal = null;
+  const t0KcbSignalFile = path.join(config.dataDir, 't0', 't0_signal_kcb.json');
+  if (fs.existsSync(t0KcbSignalFile)) {
+    try {
+      t0KcbSignal = JSON.parse(fs.readFileSync(t0KcbSignalFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取科创50做T信号失败: ${e.message}`);
+    }
+  }
+  let t0KcbDaily = null;
+  const t0KcbDailyFile = path.join(config.dataDir, 't0', 't0_daily_kcb.json');
+  if (fs.existsSync(t0KcbDailyFile)) {
+    try {
+      t0KcbDaily = JSON.parse(fs.readFileSync(t0KcbDailyFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取科创50做T每日记录失败: ${e.message}`);
+    }
+  }
+  const t0KcbDims = {
+    signal: t0KcbSignal,
+    daily: t0KcbDaily
+  };
+  // 科创50回测 slim 已由 t0_engine_kcb.cjs 生成到 public/t0_backtest_kcb.json（前端按需加载）
+
   // 做T回测数据拆分到独立文件 t0_backtest.json（首页不加载，点击做T页签时按需 fetch）
   // 每日明细字段瘦身：只保留前端表格渲染所需字段（完整字段仍保留在 data/t0/t0_backtest.json 供回测脚本使用）
   let t0BacktestSlim = null;
@@ -314,13 +339,40 @@ function exportFrontendData() {
     }
   }
 
+  // 科创50做T回测 slim → public/t0_backtest_kcb.json（前端按需加载；完整版在 data/t0/kcb_backtest.json 由 t0_engine_kcb.cjs 生成）
+  const t0KcbBacktestFile = path.join(config.dataDir, 't0', 'kcb_backtest.json');
+  if (fs.existsSync(t0KcbBacktestFile)) {
+    try {
+      const kcbBt = JSON.parse(fs.readFileSync(t0KcbBacktestFile, 'utf-8'));
+      const kcbSlim = {
+        summary: kcbBt.summary,
+        yearly: kcbBt.yearly,
+        param: kcbBt.param,
+        daily: kcbBt.daily.map(r => ({
+          date: r.date, status: r.status, open: r.open, close: r.close,
+          buy_p: r.buy_p, sell_p: r.sell_p,
+          buy_filled: r.buy_filled, sell_filled: r.sell_filled,
+          buy_time: r.buy_time || null, sell_time: r.sell_time || null,
+          hold_pct: r.hold_pct, net_pct: r.net_pct, excess_pct: r.excess_pct,
+          recover_price: r.recover_price != null ? r.recover_price : null
+        }))
+      };
+      const kcbBTPath = path.join(__dirname, 'public', 't0_backtest_kcb.json');
+      fs.writeFileSync(kcbBTPath, JSON.stringify(kcbSlim), 'utf-8');
+      console.log(`  科创50做T回测已拆分: ${kcbBTPath} (${(fs.statSync(kcbBTPath).size / 1024).toFixed(1)} KB)`);
+    } catch (e) {
+      console.log(`  ⚠ 科创50做T回测拆分失败: ${e.message}`);
+    }
+  }
+
   // 组装输出
   const output = {
     generated_at: new Date().toISOString(),
     ...cybDims,
     kcb: kcbDims,
     t0: t0Dims,
-    t0_cyb: t0CybDims
+    t0_cyb: t0CybDims,
+    t0_kcb: t0KcbDims
   };
 
   // 写入文件（压缩格式，减小体积）

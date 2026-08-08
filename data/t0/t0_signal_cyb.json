@@ -1,0 +1,22 @@
+{
+  "date": "2026-08-08",
+  "generated_at": "2026-08-08T04:15:22.457Z",
+  "phase": "非竞价时段(参考价)",
+  "signal": {
+    "open": 3.54,
+    "prev_close": 3.54,
+    "gap_pct": 0,
+    "buy_p": 3.518,
+    "sell_p": 3.564,
+    "shares": 141200,
+    "buy_amt": 496742,
+    "sell_amt": 503237,
+    "skip": false,
+    "skip_reason": "",
+    "settle_time": "13:50",
+    "current_price": 3.586,
+    "high": 3.636,
+    "low": 3.529,
+    "quote_time": "20260807161439"
+  }
+}

@@ -697,6 +697,7 @@
       <button class="tab" data-tab="cybt0" onclick="switchTab('cybt0')">创业板做T</button>
       <button class="tab" data-tab="cyb" onclick="switchTab('cyb')">创业板/红利</button>
       <button class="tab" data-tab="kcb" onclick="switchTab('kcb')">科创50/红利(辅助)</button>
+      <button class="tab" data-tab="kcbt0" onclick="switchTab('kcbt0')">科创50做T</button>
     </div>
 
     <!-- 加载状态 -->
@@ -1012,6 +1013,117 @@
       </div>
     </div>
     <!-- /cybt0Content -->
+
+    <!-- 科创50做T内容（588000 日内做T，观察期） -->
+    <div id="kcbt0Content" style="display:none;">
+
+      <!-- 今日做T信号卡 -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-title-text">今日做T信号</span>
+          <span class="section-subtitle" id="kcbt0SignalDate"></span>
+        </div>
+        <div id="kcbt0SignalCard"></div>
+      </div>
+
+      <!-- 每日记录（统计周期自今日起，每日16:00收盘后自动更新） -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-title-text">每日记录</span>
+          <span class="section-subtitle" id="kcbt0DailyMeta"></span>
+        </div>
+        <div class="metrics-grid" id="kcbt0DailyCards"></div>
+        <div class="table-wrap t0-daily-wrap">
+          <table class="t0-daily-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>状态</th>
+                <th>买入时间</th>
+                <th>卖出时间</th>
+                <th>开盘</th>
+                <th>收盘</th>
+                <th>买入价</th>
+                <th>卖出价</th>
+                <th>14:00价</th>
+                <th>成交</th>
+                <th>当日净利(扣费)</th>
+                <th>当日超额</th>
+              </tr>
+            </thead>
+            <tbody id="kcbt0DailyBody"></tbody>
+          </table>
+        </div>
+        <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）</div>
+        <div class="t0-daily-stats" id="kcbt0DailyStats"></div>
+        <div class="ratio-ruler-note">每日记录自今日起统计，每个交易日 16:00 收盘后自动追加当日记录（用当日 1 分钟K线分钟级真实判定成交与盈亏）。</div>
+        <details class="caliber-panel" id="kcbt0DailyCaliberPanel" style="margin-top:12px;">
+          <summary>📐 每日记录数据口径说明：① 分钟级真实成交（点击展开）</summary>
+          <div class="caliber-item">
+            <div class="c-title"><span class="c-tag idx-real">①</span>每日记录与历史业绩同一判定口径</div>
+            <div>收盘后（15:30 后）用当日 1 分钟K线（开盘/最高/最低/收盘）判定真实买卖成交：<b>买入</b>=某分钟最低价跌到买价（开盘×0.990）；<b>卖出</b>=买入后某分钟最高价涨到卖价（开盘×1.014）；没卖到就 14:00 手动卖出。买卖时间精确到分钟，无任何日线猜测。</div>
+          </div>
+        </details>
+      </div>
+
+      <!-- 历史业绩 -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-title-text">历史业绩</span>
+          <span class="section-subtitle" id="kcbt0BacktestRange"></span>
+        </div>
+        <div class="metrics-grid" id="kcbt0MetricsGrid"></div>
+
+        <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：双边/仅买/未触发均为真实结果">①</sup></div>
+        <div id="kcbt0StatusDist"></div>
+
+        <div class="table-wrap t0-daily-wrap">
+          <table class="t0-daily-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>状态</th>
+                <th>买入时间</th>
+                <th>卖出时间</th>
+                <th>开盘</th>
+                <th>收盘</th>
+                <th>买入价</th>
+                <th>卖出价</th>
+                <th>14:00价</th>
+                <th>成交</th>
+                <th>当日净利(扣费)</th>
+                <th>当日超额</th>
+              </tr>
+            </thead>
+            <tbody id="kcbt0HistoryDailyBody"></tbody>
+          </table>
+        </div>
+        <div id="kcbt0HistoryExpand" style="text-align:center; margin-top:10px; display:none;">
+          <button id="kcbt0HistoryExpandBtn" onclick="toggleKcbT0HistoryExpand()" class="t0-expand-btn">查看全部明细</button>
+        </div>
+
+        <details class="caliber-panel" id="kcbt0CaliberPanel">
+          <summary>📐 历史业绩数据口径说明：①真实成交 / ②验证依据（点击展开）</summary>
+          <div id="kcbt0CaliberBody"></div>
+        </details>
+      </div>
+
+      <!-- 逐年收益表 -->
+      <div class="section">
+        <div class="section-title">逐年收益（做T净利 vs 持有收益，分钟级真实口径①）</div>
+        <div class="table-wrap">
+          <table id="kcbt0YearlyTable"></table>
+        </div>
+        <div id="kcbt0YearlyNote" class="t0-note" style="margin-top:8px"></div>
+      </div>
+
+      <!-- 参数与纪律 -->
+      <div class="section">
+        <div class="section-title">参数与纪律</div>
+        <div id="kcbt0Params"></div>
+      </div>
+    </div>
+    <!-- /kcbt0Content -->
     </div>
 
     <div class="footer">
@@ -1030,6 +1142,10 @@
     let cybT0Backtest = null;     // 创业板做T回测（t0_backtest_cyb.json 按需加载）
     let cybT0BacktestPromise = null;
     let cybT0HistoryExpanded = false;
+    let kcbT0Data = null;         // 科创50做T数据（frontend_data.json 的 t0_kcb 字段）
+    let kcbT0Backtest = null;     // 科创50做T回测（t0_backtest_kcb.json 按需加载）
+    let kcbT0BacktestPromise = null;
+    let kcbT0HistoryExpanded = false;
     let currentTab = 't0';
     let chartInstance = null;
     let returnChartInstance = null;
@@ -1162,6 +1278,25 @@
         })();
       }
       return cybT0BacktestPromise;
+    }
+
+    // 按需加载科创50做T回测数据（t0_backtest_kcb.json）
+    function ensureKcbT0Backtest() {
+      if (kcbT0Backtest) return Promise.resolve(kcbT0Backtest);
+      if (!kcbT0BacktestPromise) {
+        kcbT0BacktestPromise = (async () => {
+          let resp;
+          try {
+            resp = await fetch('t0_backtest_kcb.json');
+            if (!resp.ok) throw new Error('not found');
+          } catch (e) {
+            resp = await fetch('data/t0_backtest_kcb.json');
+          }
+          kcbT0Backtest = await resp.json();
+          return kcbT0Backtest;
+        })();
+      }
+      return kcbT0BacktestPromise;
     }
 
     // 格式化数字
@@ -2105,6 +2240,281 @@
       renderCybT0HistoryDaily(cybT0Backtest || (cybT0Data && cybT0Data.backtest));
     }
 
+    // ============================================================
+    // 科创50(588000) 做T渲染（与红利做T同结构，数据/参数换成科创50）
+    // ============================================================
+    function renderKcbCaliberPanel() {
+      const el = document.getElementById('kcbt0CaliberBody');
+      if (!el) return;
+      el.innerHTML = [
+        { id: 'kcb-caliber-1', tag: 1, title: '真实数据 —— 分钟级真实成交，页面主要数字都基于它', html: `
+          历史业绩用 <b>2024-07-18 ~ 2026-08-07 共 499 个交易日</b>的 588000 五分钟K线（pytdx），按分钟序列判定真实买卖：<br>
+          <b>买入</b>=价格跌到买价（开盘×0.990）的那一根；<b>卖出</b>=买入后价格涨到卖价（开盘×1.014）的那一根；没卖到就 14:00 手动卖出。<br>
+          买卖时间精确到分钟，全部可复核。<br><br>
+          <b>核心数字</b>：做T累计净利 = 持有（一直拿着）+ 做T差价，均为真实成交结果。<br>
+          无任何折算、无估算。` },
+        { id: 'kcb-caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
+          数据源：<b>pytdx</b> 的 588000 五分钟数据（2024-07-18 起，共499个交易日）。<br>
+          参数来自 <b>489 组网格遍历</b>（买卖阈值×了结时间×高开/低开跳过）：最优 = 买1.0%/卖1.4% + 14:00了结 + 高开>3%/低开>2%跳过。<br>
+          全周期做T净利 <b>+28.46万（+56.93%）</b>，3 个年度做T净利全为正（+21.74%/+9.81%/+25.38%）。` }
+      ].map(d => `
+        <div class="caliber-item" id="${d.id}">
+          <div class="c-title"><span class="c-tag ${CALIBER[d.tag].cls}">${CALIBER[d.tag].ch}</span>${d.title}</div>
+          <div>${d.html}</div>
+        </div>`).join('');
+    }
+
+    function renderKcbT0(t0) {
+      if (!t0) return;
+      renderKcbCaliberPanel();
+      const bt = t0.backtest;
+      const sig = t0.signal;
+
+      // ===== 今日做T信号卡 =====
+      const sigDate = document.getElementById('kcbt0SignalDate');
+      if (sig && sig.signal) {
+        sigDate.textContent = sig.date + ' ' + (sig.phase || '');
+        const s = sig.signal;
+        const statusCls = s.skip ? 'status-skip' : 'status-ready';
+        const statusText = s.skip ? '今日跳过（高开>3%/低开>2%）' : '今日可做T';
+        const buyK = (bt && bt.param && bt.param.buy_k) || 0.990;
+        const sellK = (bt && bt.param && bt.param.sell_k) || 1.014;
+        document.getElementById('kcbt0SignalCard').innerHTML = `
+          <div class="t0-badge ${statusCls}">${statusText}</div>
+          <div class="t0-prices">
+            <div class="t0-price-box">
+              <div class="t0-price-label">买入监控价</div>
+              <div class="t0-price-value buy">${s.buy_p.toFixed(3)}</div>
+              <div class="t0-price-sub">开盘 × ${buyK}</div>
+            </div>
+            <div class="t0-arrow">→</div>
+            <div class="t0-price-box">
+              <div class="t0-price-label">卖出监控价</div>
+              <div class="t0-price-value sell">${s.sell_p.toFixed(3)}</div>
+              <div class="t0-price-sub">开盘 × ${sellK}</div>
+            </div>
+          </div>
+          <div class="t0-info">昨收 ${s.prev_close.toFixed(3)} | 今开 ${s.open.toFixed(3)}（${s.gap_pct >= 0 ? '+' : ''}${s.gap_pct}%）| 14:00 了结</div>
+        `;
+      } else {
+        sigDate.textContent = '暂无今日信号';
+        document.getElementById('kcbt0SignalCard').innerHTML = '<div class="t0-badge status-skip">今日信号未生成（每日9:25后自动更新）</div>';
+      }
+
+      // ===== 历史业绩 =====
+      if (bt) {
+        const s = bt.summary;
+        document.getElementById('kcbt0BacktestRange').textContent =
+          `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（分钟级真实成交）`;
+        const cap = (bt.param && bt.param.capital) || 500000;
+        const pct = v => (v / cap * 100).toFixed(2) + '%';
+        const t0Net = s.hold_profit + s.net_profit;
+        const excessAmt = s.net_profit;
+        const items = [
+          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
+          { label: '持有净利(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
+          { label: '累计超额收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+        ];
+        let annualExcess = null, yearsUsed = null;
+        try {
+          const t0m = new Date(s.start_date.slice(0,4) + '-' + s.start_date.slice(4,6) + '-' + s.start_date.slice(6,8)).getTime();
+          const t1m = new Date(s.end_date.slice(0,4) + '-' + s.end_date.slice(4,6) + '-' + s.end_date.slice(6,8)).getTime();
+          if (t1m > t0m) {
+            yearsUsed = (t1m - t0m) / (365.25 * 24 * 3600 * 1000);
+            annualExcess = excessAmt / cap * 100 / yearsUsed;
+          }
+        } catch (e) { /* 忽略 */ }
+        if (annualExcess !== null) {
+          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+          const t0NetAnnual = t0Net / cap * 100 / yearsUsed;
+          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+        }
+        document.getElementById('kcbt0MetricsGrid').innerHTML = items.map(it => `
+          <div class="metric-card">
+            ${it.cal ? calBadgeCorner(it.cal) : ''}
+            <div class="label">${it.label}</div>
+            <div class="value ${it.cls}">${it.value}</div>
+            <div class="sub">${it.sub}</div>
+          </div>
+        `).join('');
+
+        // 每日状态分布
+        const untrig = s.trading_days - s.skip_days - s.trig_days;
+        const statAvg = stat => {
+          const arr = (bt.daily || []).filter(r => r.status === stat);
+          if (!arr.length) return null;
+          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length;
+          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+        };
+        const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
+        const buyOnlyPosPct = buyOnlyRows.length
+          ? Math.round(buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100)
+          : null;
+        document.getElementById('kcbt0StatusDist').innerHTML = buildT0StatusHTML([
+          { label: '双边成交', count: s.both_days, color: 'var(--pos)', avg: statAvg('双边成交') },
+          { label: '仅买14:00卖出', count: s.buy_only_days, color: '#e67e22', avg: statAvg('仅买14:00卖出'), posPct: buyOnlyPosPct },
+          { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
+          { label: '跳过', count: s.skip_days, color: '#7f8c8d', avg: statAvg('跳过') }
+        ]);
+
+        // 逐年收益表
+        const yrHead = `
+          <thead><tr>
+            <th>年份</th>
+            <th>持有收益率①</th>
+            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 50万委托基准">①</sup></th>
+            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 持有收益率 + 做T差价净利率（相对50万委托基准）">①</sup></th>
+          </tr></thead>`;
+        const yrBody = (bt.yearly || []).map(y => {
+          const t0d = typeof y.net_d === 'number' ? y.net_d : y.net;
+          const cum = y.hold_ret + t0d;
+          return `<tr>
+            <td>${y.year}</td>
+            <td class="${y.hold_ret >= 0 ? 'pos' : 'neg'}">${pct(y.hold_ret)}</td>
+            <td class="${t0d >= 0 ? 'pos' : 'neg'}">${pct(t0d)}</td>
+            <td class="${cum >= 0 ? 'pos' : 'neg'}">${pct(cum)}</td>
+          </tr>`;
+        }).join('');
+        document.getElementById('kcbt0YearlyTable').innerHTML = yrHead + '<tbody>' + yrBody + '</tbody>';
+        const yrNote = document.getElementById('kcbt0YearlyNote');
+        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2024-07 ~ 2026-08，588000 五分钟K线），全部按50万做T委托基准算百分比，与你的总金额无关。`;
+
+        // 参数与纪律
+        const p = bt.param;
+        const buyPct = ((1 - p.buy_k) * 100).toFixed(1);
+        const sellPct = ((p.sell_k - 1) * 100).toFixed(1);
+        document.getElementById('kcbt0Params').innerHTML = `
+          <div class="table-wrap t0-params-wrap">
+            <table class="t0-params-table">
+              <thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>策略版本</td><td>${p.version || 'kcb-v1'}</td><td>kcb-v1：买1.0%/卖1.4%，未卖出 14:00 手动了结（489组合网格验证最优）</td></tr>
+                <tr><td>标的</td><td>${p.symbol}</td><td>${p.name}（华夏科创50ETF）</td></tr>
+                <tr><td>买入系数</td><td>×${p.buy_k}</td><td>买入监控价 = 开盘价 × ${p.buy_k}（跌${buyPct}%触发）</td></tr>
+                <tr><td>卖出系数</td><td>×${p.sell_k}</td><td>卖出监控价 = 开盘价 × ${p.sell_k}（涨${sellPct}%触发）</td></tr>
+                <tr><td>委托仓位</td><td>${(p.capital / 10000).toFixed(0)}万</td><td>每日固定做T委托金额</td></tr>
+                <tr><td>佣金</td><td>万${p.commission_rate * 10000}</td><td>双边计费基准</td></tr>
+                <tr><td>高开跳过</td><td>超${(p.skip_up * 100).toFixed(1)}%</td><td>开盘 &gt; 昨收 × 1.03 当日不做T（避免追高）</td></tr>
+                <tr><td>低开跳过</td><td>超${(p.skip_drop * 100).toFixed(1)}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
+                <tr><td>了结时间</td><td>${p.settle_time || '14:00'}</td><td>仅买入未卖出 → 14:00 手动市价卖出等量，不过夜</td></tr>
+                <tr><td>执行方式</td><td>先买后卖</td><td>条件单选「限价委托」+价格类型「即时现价」=触发瞬间按最新价挂限价单（买成交≤监控价/卖成交≥监控价，匹配回测）；手动挂单则限价直接填监控价。正T保护不卖底仓</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，回测验证 0.001 滑点即可使做T收益大幅缩水。卖出单务必等买入成交后再挂。</div>
+          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有（588000 窗口持有+143.06%，做T+56.93%，总收益199.99%）；买-${buyPct}%/卖+${sellPct}%（2.4%价差）基于 499 天五分钟数据网格验证（489组合），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。科创50做T为观察期模块，数据每交易日16:00后更新。</div>
+        `;
+      } else {
+        document.getElementById('kcbt0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
+      }
+
+      // ===== 每日记录 =====
+      renderKcbT0Daily(t0.daily);
+      // ===== 历史业绩：全周期每日明细 =====
+      renderKcbT0HistoryDaily(bt);
+    }
+
+    // 科创50每日记录渲染（与红利 renderT0Daily 同构；观察期不开放实际卖出价录入）
+    function renderKcbT0Daily(daily) {
+      const meta = document.getElementById('kcbt0DailyMeta');
+      const body = document.getElementById('kcbt0DailyBody');
+      const cards = document.getElementById('kcbt0DailyCards');
+      const statsEl = document.getElementById('kcbt0DailyStats');
+      if (!body) return;
+      if (!daily || !daily.records || daily.records.length === 0) {
+        if (meta) meta.textContent = '';
+        if (statsEl) statsEl.textContent = '';
+        if (cards) cards.innerHTML = '';
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
+        return;
+      }
+      const records = daily.records;
+      const total = records.length;
+      if (meta) {
+        const dt = daily.updated_at || '';
+        const timePart = dt.includes(' ') ? dt.split(' ')[1] : dt;
+        meta.innerHTML = `${records[0].date}~${records[total - 1].date} ${timePart}，${total}个交易日 ${calBadge(1)}`;
+      }
+      const cnt = s => records.filter(r => r.status === s).length;
+      const both = cnt('双边成交');
+      const recover = records.filter(r => String(r.status).indexOf('仅买') === 0).length;
+      const skip = cnt('跳过');
+      const untrig = cnt('未触发');
+      const pend = cnt('待收盘');
+      const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
+      const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
+      const t0NetPct = Math.round((sumHoldPct + sumNetPct) * 100) / 100;
+
+      if (cards) {
+        const cardItems = [
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
+          { label: '持有净利(一直拿着)', value: sumHoldPct.toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
+          { label: '累计超额收益', value: sumNetPct.toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+        ];
+        cards.innerHTML = cardItems.map(it => `
+          <div class="metric-card">
+            ${it.cal ? calBadgeCorner(it.cal) : ''}
+            <div class="label">${it.label}</div>
+            <div class="value ${it.cls}">${it.value}</div>
+            <div class="sub">${it.sub}</div>
+          </div>
+        `).join('');
+      }
+      if (statsEl) {
+        const statAvg = stat => {
+          const arr = records.filter(r => r.status === stat);
+          const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
+          if (!vals.length) return null;
+          const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+        };
+        const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
+        const dBuyOnlyPosPct = dBuyOnlyRows.length
+          ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
+          : null;
+        statsEl.innerHTML = buildT0StatusHTML([
+          { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
+          { label: '仅买14:00卖出', count: recover, color: '#e67e22', avg: statAvg('仅买14:00卖出'), posPct: dBuyOnlyPosPct },
+          { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
+          { label: '跳过', count: skip, color: '#7f8c8d', avg: statAvg('跳过') },
+          { label: '待收盘', count: pend, color: '#f1c40f', avg: statAvg('待收盘') }
+        ]);
+      }
+      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, false); // 最新在上（含买卖时间，观察期不开放录入）
+    }
+
+    // 科创50历史明细
+    const KCB_T0_HISTORY_PREVIEW = 20;
+    function renderKcbT0HistoryDaily(bt) {
+      const body = document.getElementById('kcbt0HistoryDailyBody');
+      const wrap = document.getElementById('kcbt0HistoryExpand');
+      const btn = document.getElementById('kcbt0HistoryExpandBtn');
+      if (!body) return;
+      if (!bt || !bt.daily || bt.daily.length === 0) {
+        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">每日明细未生成（重新生成回测后更新）</td></tr>';
+        if (wrap) wrap.style.display = 'none';
+        return;
+      }
+      const rows = [...bt.daily].reverse();
+      const total = rows.length;
+      if (total <= KCB_T0_HISTORY_PREVIEW) {
+        body.innerHTML = buildT0RowsHTML(rows, true);
+        if (wrap) wrap.style.display = 'none';
+        return;
+      }
+      const shown = kcbT0HistoryExpanded ? rows : rows.slice(0, KCB_T0_HISTORY_PREVIEW);
+      body.innerHTML = buildT0RowsHTML(shown, true);
+      if (wrap && btn) {
+        wrap.style.display = '';
+        btn.textContent = kcbT0HistoryExpanded ? '收起明细' : `查看全部 ${total} 天明细`;
+      }
+    }
+
+    function toggleKcbT0HistoryExpand() {
+      kcbT0HistoryExpanded = !kcbT0HistoryExpanded;
+      renderKcbT0HistoryDaily(kcbT0Backtest || (kcbT0Data && kcbT0Data.backtest));
+    }
+
     // ===== 数据口径角标体系 =====
     // ①真实数据 ②验证依据；点击角标滚动到下方说明面板对应条目
     const CALIBER = {
@@ -2377,9 +2787,11 @@
 
       const isT0 = tab === 't0';
       const isCybT0 = tab === 'cybt0';
-      document.getElementById('rotationContent').style.display = (isT0 || isCybT0) ? 'none' : 'block';
+      const isKcbT0 = tab === 'kcbt0';
+      document.getElementById('rotationContent').style.display = (isT0 || isCybT0 || isKcbT0) ? 'none' : 'block';
       document.getElementById('t0Content').style.display = isT0 ? 'block' : 'none';
       document.getElementById('cybt0Content').style.display = isCybT0 ? 'block' : 'none';
+      document.getElementById('kcbt0Content').style.display = isKcbT0 ? 'block' : 'none';
 
       if (isT0) {
         document.getElementById('headerTitle').textContent = '红利做T（515180 日内高抛低吸）';
@@ -2421,6 +2833,25 @@
         return;
       }
 
+      if (isKcbT0) {
+        document.getElementById('headerTitle').textContent = '科创50做T（588000 日内高抛低吸）';
+        document.getElementById('headerDesc').textContent = '基于已有底仓做T+0：跌1.0%自动买入，买入成交后涨1.4%自动卖出，14:00手动了结不过夜；高开超3%/低开超2%当日跳过';
+        if (kcbT0Data) {
+          if (kcbT0Data.backtest) {
+            renderKcbT0(kcbT0Data);
+          } else {
+            document.getElementById('kcbt0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据加载中，请稍候…（弱网下约需数秒）</div>';
+            ensureKcbT0Backtest().then(bt => {
+              kcbT0Data.backtest = bt;
+              renderKcbT0(kcbT0Data);
+            }).catch(e => {
+              document.getElementById('kcbt0MetricsGrid').innerHTML = '<div class="gray">科创50做T回测数据加载失败：' + e.message + '</div>';
+            });
+          }
+        }
+        return;
+      }
+
       // 渲染新数据
       const data = tab === 'cyb' ? cybData : kcbData;
       if (data) {
@@ -2441,6 +2872,7 @@
         kcbData = data.kcb;
         t0Data = data.t0;
         cybT0Data = data.t0_cyb;
+        kcbT0Data = data.t0_kcb;
         delete cybData.kcb;
 
         document.getElementById('loading').style.display = 'none';
