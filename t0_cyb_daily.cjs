@@ -170,6 +170,9 @@ async function updateDaily() {
   }
 
   const data = loadDaily();
+  // 清理 START_DATE 之前的旧记录（每日记录起点=观察期启用日，此前数据归历史业绩回测）
+  // 每日更新也执行清理：CI 从 OSS 下载到的历史全量记录会被裁剪到起点之后
+  data.records = data.records.filter(r => r.date >= START_DATE);
   const idx = data.records.findIndex(r => r.date === record.date);
   if (idx >= 0) data.records[idx] = record; else data.records.push(record);
   data.records.sort((a, b) => a.date < b.date ? -1 : 1);
