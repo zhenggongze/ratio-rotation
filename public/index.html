@@ -978,9 +978,16 @@
         const data = await resp.json();
         if (data.success) {
           t0Adjustments[date] = Math.round(price * 1000) / 1000;
-          input.classList.add('saved');
-          setStatus('✓已保存', 'ok');
-          setTimeout(() => setStatus('', ''), 3000);
+          // 关联同步：按实际卖出价重算该日 当日净利(扣费)/当日超额，并刷新标头统计卡与状态分布
+          if (t0Data && t0Data.daily) renderT0Daily(t0Data.daily);
+          const newInput = document.querySelector('.t0-adjust-input[data-date="' + date + '"]');
+          if (newInput) newInput.classList.add('saved');
+          const newStatus = document.getElementById('t0AdjSt_' + date);
+          if (newStatus) {
+            newStatus.textContent = '✓已保存';
+            newStatus.className = 't0-adjust-save ok';
+            setTimeout(() => { if (newStatus) newStatus.textContent = ''; }, 3000);
+          }
         } else {
           setStatus(data.error || '保存失败', 'err');
           input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
@@ -1817,6 +1824,33 @@
       return `<div class="t0-status-bar">${segs}</div><div class="t0-status-legend">${legend}<b>合计 ${total} 天 = 100%</b></div>`;
     }
 
+    // 按用户录入的实际卖出价重算单日做T净利（与 t0_engine.cjs computeT0Daily 口径一致）
+    // 仅在用户录入过实际卖出价的日期生效，其余日期原样返回
+    function applyT0AdjustToRecord(r) {
+      if (!r || !r.buy_filled) return r;
+      const adj = t0Adjustments[r.date];
+      if (adj === undefined || adj === null) return r;
+      const actualSell = Number(adj);
+      if (!isFinite(actualSell) || actualSell <= 0) return r;
+      const buyP = Number(r.buy_p), shares = Number(r.shares);
+      if (!isFinite(buyP) || !isFinite(shares) || shares <= 0) return r;
+      const cap = (t0Backtest && t0Backtest.param && t0Backtest.param.capital) || 500000;
+      const rate = (t0Backtest && t0Backtest.param && t0Backtest.param.commission_rate) || 0.00005;
+      const gross = (actualSell - buyP) * shares;
+      const commission = (buyP + actualSell) * shares * rate;
+      const net = gross - commission;
+      const netPct = Math.round(net / cap * 10000) / 100;
+      const holdPct = typeof r.hold_pct === 'number' ? r.hold_pct : 0;
+      return {
+        ...r,
+        gross: Math.round(gross * 100) / 100,
+        commission: Math.round(commission * 100) / 100,
+        net: Math.round(net * 100) / 100,
+        net_pct: netPct,
+        excess_pct: Math.round((netPct - holdPct) * 100) / 100
+      };
+    }
+
     // 渲染每日记录（自今日起）
     function renderT0Daily(daily) {
       const meta = document.getElementById('t0DailyMeta');
@@ -1831,7 +1865,7 @@
         body.innerHTML = '<tr><td colspan="11" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
         return;
       }
-      const records = daily.records;
+      const records = daily.records.map(applyT0AdjustToRecord);
       const total = records.length;
       if (meta) {
         const dt = daily.updated_at || '';
