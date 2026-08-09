@@ -8,6 +8,7 @@ const path = require('path');
 const https = require('https');
 const { T0_CONFIG, computeT0Signal, loadBacktestJson } = require('./t0_engine.cjs');
 const { sendPushWithRetry } = require('./pusher.cjs');
+const { isTradingDay, todayBeijing } = require('./trading_day.cjs');
 
 // 尝试加载 .env（本地开发用，GitHub Actions 用环境变量）
 try {
@@ -106,6 +107,12 @@ async function main() {
   // 用北京时间日期（UTC+8），确保与 A 股交易日一致
   const beijingNow = new Date(Date.now() + 8 * 3600 * 1000);
   const today = dateArg || beijingNow.toISOString().slice(0, 10);
+
+  // 交易日守卫：非交易日（周末/法定节假日/调休）不拉行情、不推送，直接静默退出
+  if (!isTradingDay(today)) {
+    console.log(`非交易日(${today})，跳过做T信号生成与推送`);
+    process.exit(0);
+  }
 
   console.log('='.repeat(52));
   console.log(`  515180 红利ETF 做T信号  ${today}`);

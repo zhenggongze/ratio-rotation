@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { CYB_CONFIG } = require('./t0_engine_cyb.cjs');
+const { isTradingDay, todayBeijing } = require('./trading_day.cjs');
 
 try { require('dotenv').config({ path: path.join(__dirname, '.env') }); } catch (e) { /* 可选 */ }
 
@@ -81,6 +82,12 @@ function currentPhase() {
 }
 
 async function main() {
+  const today = todayBeijing();
+  // 交易日守卫：非交易日不拉行情、不生成信号文件，直接静默退出
+  if (!isTradingDay(today)) {
+    console.log(`非交易日(${today})，跳过创业板做T信号生成`);
+    process.exit(0);
+  }
   console.log('='.repeat(52));
   console.log('  159915 创业板ETF 做T信号');
   console.log('='.repeat(52));
@@ -99,7 +106,6 @@ async function main() {
   console.log(`  买入: ${sig.buy_p}（开盘跌${buyPct}%） | 卖出: ${sig.sell_p}（开盘涨${sellPct}%） | 13:50了结`);
   if (sig.skip) console.log(`  ⚠ ${sig.skip_reason}`);
 
-  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
   const payload = {
     date: today,
     generated_at: new Date().toISOString(),

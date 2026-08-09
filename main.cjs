@@ -18,6 +18,7 @@ const { generateHealthReport, formatHealthReport } = require('./health_check.cjs
 const { exportExcel: exportExcelFn } = require('./exporter.cjs');
 const { generateChart: generateChartFn } = require('./chart.cjs');
 const { exportFrontendData } = require('./export_frontend_data.cjs');
+const { isTradingDay, todayBeijing } = require('./trading_day.cjs');
 
 // ============================================================
 // 子命令：run-daily
@@ -29,7 +30,7 @@ const { exportFrontendData } = require('./export_frontend_data.cjs');
 async function runDaily(dateArg, options) {
   options = options || {};
   const skipPush = options.skipPush === true; // catchup补跑时为true，不推送
-  const forcePushOnNonTrading = options.forcePushOnNonTrading !== false; // 默认true：非交易日也推送最新状态
+  const forcePushOnNonTrading = options.forcePushOnNonTrading === true; // 默认false：非交易日不推送休市消息
   const today = dateArg || todayBeijingDate();
   console.log('='.repeat(60));
   console.log(`每日运行 — 日期: ${today}`);

@@ -24,13 +24,22 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: 交易日检查（周末/节假日/调休 → 跳过流水线与推送）
+        id: check_td
+        run: |
+          node check_trading_day.cjs
+          echo "is_td=$(node check_trading_day.cjs | grep -oP '(?<=IS_TRADING_DAY=)\w+')" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: 设置 Node.js
+        if: steps.check_td.outputs.is_td == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: 安装依赖
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "安装依赖" "running"
           npm ci
@@ -38,7 +47,7 @@ jobs:
 
       - name: 幂等检查（今日做T信号是否已生成）
         id: id_check
-        if: ${{ ! inputs.force_refresh }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.force_refresh }}
         continue-on-error: true
         run: node check_t0_today.cjs
         env:
@@ -46,6 +55,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 下载数据（OSS → 本地，含 t0 回测与历史信号）
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "下载数据" "running"
           node oss_data_sync.cjs download
@@ -60,6 +70,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 生成回测数据（每次强制重新生成，保证与当前参数/舍入口径一致）
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "回测数据" "running"
           node -e "require('./t0_engine.cjs').buildBacktestJson()"
@@ -67,7 +78,7 @@ jobs:
           node workflow_logger.cjs --record "回测数据" "success"
 
       - name: 计算今日做T信号并推送 PushDeer
-        if: ${{ inputs.force_refresh || steps.id_check.outcome != 'success' }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |
           node workflow_logger.cjs --record "做T信号" "running"
           output=$(node t0_signal.cjs --push 2>&1)
@@ -84,11 +95,12 @@ jobs:
           PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
 
       - name: 计算创业板(159915)今日做T信号
-        if: ${{ inputs.force_refresh || steps.id_check.outcome != 'success' }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |
           node t0_cyb_signal.cjs
 
       - name: 上传数据到 OSS（状态持久化）
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "上传数据" "running"
           node oss_data_sync.cjs upload
@@ -103,6 +115,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 部署前端（含今日做T信号）到 OSS + 刷新 CDN
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "部署前端" "running"
           node export_frontend_data.cjs
@@ -121,7 +134,7 @@ jobs:
       - name: 汇总报告并发送通知
         if: always()
         run: |
-          node workflow_logger.cjs --finish "${{ env.RUN_ID }}"
+          node workflow_logger.cjs --finish "${{ env.RUN_ID }}" --skip-non-trading "${{ steps.check_td.outputs.is_td }}"
         env:
           PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}

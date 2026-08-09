@@ -29,13 +29,22 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: 交易日检查（周末/节假日/调休 → 跳过流水线与推送）
+        id: check_td
+        run: |
+          node check_trading_day.cjs
+          echo "is_td=$(node check_trading_day.cjs | grep -oP '(?<=IS_TRADING_DAY=)\w+')" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: 设置 Node.js
+        if: steps.check_td.outputs.is_td == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: 安装依赖
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "安装依赖" "running"
           npm ci
@@ -43,7 +52,7 @@ jobs:
 
       - name: 幂等检查（OSS今日数据是否已生成）
         id: id_check
-        if: ${{ ! inputs.skip_pipeline && ! inputs.force_refresh }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline && ! inputs.force_refresh }}
         continue-on-error: true
         run: node check_oss_today.cjs
         env:
@@ -52,6 +61,7 @@ jobs:
 
       - name: 下载历史数据（从 OSS 恢复状态）
         # 无条件执行：即使幂等跳过也需下载 t0 信号等数据，避免部署前端时覆盖含 t0 的 frontend_data.json
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "下载数据" "running"
           node oss_data_sync.cjs download
@@ -66,7 +76,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 更新做T每日记录（今日行情 → t0_daily.json，按日期幂等覆盖）
-        if: ${{ ! inputs.skip_pipeline }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
         run: |
           node workflow_logger.cjs --record "做T每日记录" "running"
           node t0_daily.cjs
@@ -78,12 +88,12 @@ jobs:
           node workflow_logger.cjs --record "做T每日记录" "success"
 
       - name: 更新创业板做T每日记录（159915 今日行情 → t0_daily_cyb.json）
-        if: ${{ ! inputs.skip_pipeline }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
         run: |
           node t0_cyb_daily.cjs
 
       - name: 运行每日任务（采集数据+信号判定+收益计算+推送）
-        if: ${{ ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |
           node workflow_logger.cjs --record "运行每日任务" "running"
           output=$(node main.cjs run-daily 2>&1)
@@ -104,7 +114,7 @@ jobs:
       - name: 上传更新后的数据到 OSS（状态持久化）
         # 无条件上传：t0_daily.cjs 每次运行都会更新今日做T记录（含14:50价），
         # 若此处沿用"幂等跳过"条件，幂等命中时会丢失 t0_daily 更新（历史教训：8-07 14:50价缺失）
-        if: ${{ ! inputs.skip_pipeline }}
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
         run: |
           node workflow_logger.cjs --record "上传数据" "running"
           node oss_data_sync.cjs upload
@@ -119,6 +129,7 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
       - name: 部署前端到 OSS + 刷新 CDN
+        if: steps.check_td.outputs.is_td == 'true'
         run: |
           node workflow_logger.cjs --record "部署前端" "running"
           node export_frontend_data.cjs
@@ -137,7 +148,7 @@ jobs:
       - name: 汇总报告并发送通知
         if: always()
         run: |
-          node workflow_logger.cjs --finish "${{ env.RUN_ID }}"
+          node workflow_logger.cjs --finish "${{ env.RUN_ID }}" --skip-non-trading "${{ steps.check_td.outputs.is_td }}"
         env:
           PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}

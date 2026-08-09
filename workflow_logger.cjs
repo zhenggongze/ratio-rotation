@@ -187,9 +187,13 @@ async function fetchTodayStatus() {
 async function cmdFinish() {
   const runId = process.argv[3];
   if (!runId) {
-    console.log('用法: workflow_logger.cjs --finish <run_id>');
+    console.log('用法: workflow_logger.cjs --finish <run_id> [--skip-non-trading <true|false>]');
     process.exit(1);
   }
+  // 非交易日跳过推送（workflow 的交易日守卫传入 is_td：true=交易日）
+  const skipArgIdx = process.argv.indexOf('--skip-non-trading');
+  const isTradingDayFlag = skipArgIdx >= 0 ? process.argv[skipArgIdx + 1] === 'true' : null;
+  const isNonTrading = isTradingDayFlag === false; // 明确判定为非交易日时跳过推送
 
   // 读取步骤记录
   const records = [];
@@ -273,9 +277,11 @@ async function cmdFinish() {
            `🌐 访问: https://portfolio-analysis.top/ratio-rotation/`;
   }
 
-  // 幂等跳过时不重复推送
-  if (pipelineAbsent && finalStatus === 'success') {
-    console.log('\n  ℹ️ 今日数据已存在（幂等检查跳过流水线），不重复推送通知');
+  // 幂等跳过时不重复推送；非交易日不推送报告
+  if ((pipelineAbsent && finalStatus === 'success') || isNonTrading) {
+    console.log(isNonTrading
+      ? '\n  ℹ️ 非交易日，跳过工作流报告推送'
+      : '\n  ℹ️ 今日数据已存在（幂等检查跳过流水线），不重复推送通知');
   } else {
     await pushNotification('创红轮动 工作流报告', body, finalStatus === 'success');
   }
