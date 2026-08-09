@@ -820,8 +820,8 @@
                 <th>14:50价</th>
                 <th>实际卖出价<sup class="t0-badge-idx" title="默认=卖出价，可手动修改；仅买14:50卖出遇到滑点时按实际成交价录入，保存后云端落库，刷新/换设备不丢">✎</sup></th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="t0DailyBody"></tbody>
@@ -866,8 +866,8 @@
                 <th>卖出价</th>
                 <th>14:50价</th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="t0HistoryDailyBody"></tbody>
@@ -933,9 +933,10 @@
                 <th>买入价</th>
                 <th>卖出价</th>
                 <th>13:50价</th>
+                <th>实际卖出价<sup class="t0-badge-idx" title="默认=卖出价，可手动修改；仅买13:50卖出遇到滑点时按实际成交价录入，保存后云端落库，刷新/换设备不丢">✎</sup></th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="cybt0DailyBody"></tbody>
@@ -978,8 +979,8 @@
                 <th>卖出价</th>
                 <th>13:50价</th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="cybt0HistoryDailyBody"></tbody>
@@ -1210,7 +1211,7 @@
           t0Adjustments[date] = Math.round(price * 1000) / 1000;
           // 关联同步：按实际卖出价重算该日 当日净利(扣费)/当日超额，并刷新标头统计卡与状态分布
           if (t0Data && t0Data.daily) renderT0Daily(t0Data.daily);
-          const newInput = document.querySelector('.t0-adjust-input[data-date="' + date + '"]');
+          const newInput = document.querySelector('#t0DailyBody .t0-adjust-input[data-date="' + date + '"]');
           if (newInput) newInput.classList.add('saved');
           const newStatus = document.getElementById('t0AdjSt_' + date);
           if (newStatus) {
@@ -1226,6 +1227,112 @@
         setStatus('保存失败', 'err');
         input.value = (t0Adjustments[date] !== undefined && t0Adjustments[date] !== null) ? Number(t0Adjustments[date]).toFixed(3) : defVal;
       }
+    }
+
+    // ===== 创业板实际卖出价录入（与红利同机制；FC key 带 cyb: 前缀，避免同日两模块互相覆盖） =====
+    let cybT0Adjustments = {};   // date → 实际卖出价，从 FC /api/t0/load 拉取 cyb: 前缀记录
+    async function initCybT0Adjust() {
+      try {
+        if (!T0_FC_API) {
+          const cfgResp = await fetch('api_config.json', { cache: 'no-store' });
+          const cfg = await cfgResp.json();
+          T0_FC_API = (cfg.fc_api || '').replace(/\/+$/, '');
+        }
+      } catch (e) {
+        T0_FC_API = null;
+      }
+      if (!T0_FC_API) return;
+      try {
+        const resp = await fetch(T0_FC_API + '/api/t0/load', { cache: 'no-store' });
+        const data = await resp.json();
+        if (data && data.records) {
+          const recs = {};
+          for (const [k, v] of Object.entries(data.records)) {
+            if (k.indexOf('cyb:') === 0) {
+              const d = k.slice(4);
+              recs[d] = (v && typeof v === 'object' && 'actual_sell_price' in v) ? Number(v.actual_sell_price) : Number(v);
+            }
+          }
+          cybT0Adjustments = recs;
+        }
+      } catch (e) {
+        // 拉取失败时保持空记录；输入框会因 T0_FC_API 未连上而禁用
+      }
+    }
+    // 保存单日创业板实际卖出价到 FC（OSS 落库 + 永不删除备份）
+    async function saveCybT0Adjust(input, date) {
+      const price = Number(input.value);
+      const statusEl = document.getElementById('cybAdjSt_' + date);
+      const defVal = Number(input.dataset.def);
+      const setStatus = (txt, cls) => { if (statusEl) { statusEl.textContent = txt; statusEl.className = 't0-adjust-save' + (cls ? ' ' + cls : ''); } };
+      if (!isFinite(price) || price <= 0 || price > 100) {
+        setStatus('无效', 'err');
+        input.value = (cybT0Adjustments[date] !== undefined && cybT0Adjustments[date] !== null) ? Number(cybT0Adjustments[date]).toFixed(3) : defVal;
+        return;
+      }
+      if (!T0_FC_API) {
+        setStatus('未连接', 'err');
+        input.value = (cybT0Adjustments[date] !== undefined && cybT0Adjustments[date] !== null) ? Number(cybT0Adjustments[date]).toFixed(3) : defVal;
+        return;
+      }
+      if (cybT0Adjustments[date] !== undefined && cybT0Adjustments[date] !== null && Number(cybT0Adjustments[date]) === price) {
+        setStatus('已保存', 'ok');
+        return;
+      }
+      setStatus('保存中…', '');
+      try {
+        const resp = await fetch(T0_FC_API + '/api/t0/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: date, actual_sell_price: price, module: 'cyb' })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          cybT0Adjustments[date] = Math.round(price * 1000) / 1000;
+          // 关联同步：按实际卖出价重算该日 当日净利(扣费)/当日超额，并刷新标头统计卡与状态分布
+          if (cybT0Data && cybT0Data.daily) renderCybT0Daily(cybT0Data.daily);
+          const newInput = document.querySelector('#cybt0DailyBody .t0-adjust-input[data-date="' + date + '"]');
+          if (newInput) newInput.classList.add('saved');
+          const newStatus = document.getElementById('cybAdjSt_' + date);
+          if (newStatus) {
+            newStatus.textContent = '✓已保存';
+            newStatus.className = 't0-adjust-save ok';
+            setTimeout(() => { if (newStatus) newStatus.textContent = ''; }, 3000);
+          }
+        } else {
+          setStatus(data.error || '保存失败', 'err');
+          input.value = (cybT0Adjustments[date] !== undefined && cybT0Adjustments[date] !== null) ? Number(cybT0Adjustments[date]).toFixed(3) : defVal;
+        }
+      } catch (e) {
+        setStatus('保存失败', 'err');
+        input.value = (cybT0Adjustments[date] !== undefined && cybT0Adjustments[date] !== null) ? Number(cybT0Adjustments[date]).toFixed(3) : defVal;
+      }
+    }
+    // 按用户录入的实际卖出价重算单日创业板做T净利（与 t0_engine.cjs computeT0Daily 口径一致）
+    // 仅在用户录入过实际卖出价的日期生效，其余日期原样返回
+    function applyCybT0AdjustToRecord(r) {
+      if (!r || !r.buy_filled) return r;
+      const adj = cybT0Adjustments[r.date];
+      if (adj === undefined || adj === null) return r;
+      const actualSell = Number(adj);
+      if (!isFinite(actualSell) || actualSell <= 0) return r;
+      const buyP = Number(r.buy_p), shares = Number(r.shares);
+      if (!isFinite(buyP) || !isFinite(shares) || shares <= 0) return r;
+      const cap = (cybT0Backtest && cybT0Backtest.param && cybT0Backtest.param.capital) || 500000;
+      const rate = (cybT0Backtest && cybT0Backtest.param && cybT0Backtest.param.commission_rate) || 0.00005;
+      const gross = (actualSell - buyP) * shares;
+      const commission = (buyP + actualSell) * shares * rate;
+      const net = gross - commission;
+      const netPct = Math.round(net / cap * 10000) / 100;
+      const holdPct = typeof r.hold_pct === 'number' ? r.hold_pct : 0;
+      return {
+        ...r,
+        gross: Math.round(gross * 100) / 100,
+        commission: Math.round(commission * 100) / 100,
+        net: Math.round(net * 100) / 100,
+        net_pct: netPct,
+        excess_pct: Math.round((netPct - holdPct) * 100) / 100
+      };
     }
 
     // 加载数据
@@ -1844,17 +1951,19 @@
         const s = bt.summary;
         document.getElementById('t0BacktestRange').textContent = `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（分钟级真实成交）`;
         const cap = (bt.param && bt.param.capital) || 500000;
-        const pct = v => (v / cap * 100).toFixed(2) + '%';
+        // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
+        const totalCap = cap * 2;
+        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
         // v2 口径：分钟级真实成交（basis='minute_real'），不做任何折算估算
         const t0Net = s.hold_profit + s.net_profit;
         const excessAmt = s.net_profit;
-        const t0Sub = '底仓持有+做T差价（分钟级真实成交）';
+        const t0Sub = '底仓持有+做T差价 ÷ 100万总资金';
         const cal = 1;
         const items = [
           // cal: ①真实（角标点击滚动到下方说明面板）
           { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: t0Sub, cal: cal },
-          { label: '持有净利(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: cal }
+          { label: '底仓贡献(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: cal }
         ];
         // 年化超额收益率 = 累计超额收益率 ÷ 回测区间年数（窗口内）
         let annualExcess = null, yearsUsed = null;
@@ -1863,13 +1972,13 @@
           const t1m = new Date(s.end_date.slice(0,4) + '-' + s.end_date.slice(4,6) + '-' + s.end_date.slice(6,8)).getTime();
           if (t1m > t0m) {
             yearsUsed = (t1m - t0m) / (365.25 * 24 * 3600 * 1000);
-            annualExcess = excessAmt / cap * 100 / yearsUsed;
+            annualExcess = excessAmt / totalCap * 100 / yearsUsed;
           }
         } catch (e) { /* 日期解析失败则不显示 */ }
         if (annualExcess !== null) {
           items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
           // 做T累计净利(扣手续费)的年化收益 = 做T累计净利 ÷ 回测区间年数（持有+做T差价合计的年化口径）
-          const t0NetAnnual = t0Net / cap * 100 / yearsUsed;
+          const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
           items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
         }
         // 口径提示条已移除：与说明面板①内容重复（历史业绩仅统计有分钟数据的交易日，无折算假设）
@@ -1885,11 +1994,11 @@
         // ===== 每日状态分布（加总=100%） =====
         // v2 真实口径①：分钟级真实成交结果，无折算段
         const untrig = s.trading_days - s.skip_days - s.trig_days;
-        // 各状态平均当日做T净利%（net_pct 均值，扣手续费；未触发/低开跳过无操作=0）
+        // 各状态平均当日做T净利%（net_pct 均值，扣手续费；未触发/低开跳过无操作=0；100万总资金基准÷2）
         const statAvg = stat => {
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
-          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length;
+          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2;
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         // 仅买14:50卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
@@ -1905,18 +2014,18 @@
         ]);
 
         // ===== 逐年收益表（分钟级真实口径①） =====
-        // 全部用百分比（相对50万做T委托基准），不显示金额，避免与个人总持仓金额混淆
+        // 全部用百分比（相对100万总资金基准：底仓50万+做T现金50万），不显示金额，避免与个人总持仓金额混淆
         const yrHead = `
           <thead><tr>
             <th>年份</th>
-            <th>持有收益率①</th>
-            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 50万委托基准">①</sup></th>
-            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 持有收益率 + 做T差价净利率（相对50万委托基准）">①</sup></th>
+            <th>底仓贡献率①</th>
+            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 100万总资金基准">①</sup></th>
+            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 底仓贡献率 + 做T差价净利率（相对100万总资金基准）">①</sup></th>
           </tr></thead>`;
         const yrBody = (bt.yearly || []).map(y => {
           const t0d = typeof y.net_d === 'number' ? y.net_d : y.net;   // 做T差价净利
           const cum = y.hold_ret + t0d;                                 // 做T累计净利
-          const pct = v => (v / cap * 100).toFixed(2) + '%';
+          const pct = v => (v / totalCap * 100).toFixed(2) + '%';
           return `<tr>
             <td>${y.year}</td>
             <td class="${y.hold_ret >= 0 ? 'pos' : 'neg'}">${pct(y.hold_ret)}</td>
@@ -1927,7 +2036,7 @@
         document.getElementById('t0YearlyTable').innerHTML = yrHead + '<tbody>' + yrBody + '</tbody>';
         // 逐年收益口径说明
         const yrNote = document.getElementById('t0YearlyNote');
-        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2025-2026 有分钟数据的年份），全部按50万做T委托基准算百分比，与你的总金额无关。`;
+        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2025-2026 有分钟数据的年份），全部按100万总资金基准（底仓50万+做T现金50万）算百分比，与你的总金额无关。`;
 
         // ===== 参数与纪律 =====
         const p = bt.param;
@@ -1950,7 +2059,7 @@
               </tbody>
             </table>
           </div>
-          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，实测 0.001 滑点即可使做T收益从 +26.89% 变为 -9.09%。卖出单务必等买入成交后再挂。</div>
+          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，实测 0.001 滑点即可使做T收益从 +13.44% 变为 -4.55%。卖出单务必等买入成交后再挂。</div>
           <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有；v2 买-${buyPct}%/卖+${sellPct}%（1.1%价差）基于385天真实1分钟数据验证（真实双边占比89.2%，胜率60%），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。</div>
         `;
       } else {
@@ -1979,7 +2088,7 @@
         { id: 'cyb-caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
           数据源：<b>pytdx + baostock 双源交叉验证</b>的 159915 五分钟数据（重叠期收盘平均差异 0.0006 元），并与 pytdx 一分钟数据交叉验证结论一致。<br>
           参数来自 <b>1536 组严格口径网格扫描</b>（了结时间×买卖阈值）：最优 = 买0.6%/卖0.7% + 13:50了结 + 高开>1%/低开>1.5%跳过。<br>
-          全周期做T净利 <b>+26.67万（+53.34%）</b>，4 个年度做T净利全为正（+0.6%/+10.4%/+15.6%/+26.7%）。` }
+          全周期做T净利 <b>+26.67万（+26.67%）</b>，4 个年度做T净利全为正（+0.3%/+5.2%/+7.8%/+13.3%）。` }
       ].map(d => `
         <div class="caliber-item" id="${d.id}">
           <div class="c-title"><span class="c-tag ${CALIBER[d.tag].cls}">${CALIBER[d.tag].ch}</span>${d.title}</div>
@@ -2030,13 +2139,15 @@
         document.getElementById('cybt0BacktestRange').textContent =
           `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（分钟级真实成交）`;
         const cap = (bt.param && bt.param.capital) || 500000;
-        const pct = v => (v / cap * 100).toFixed(2) + '%';
+        // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
+        const totalCap = cap * 2;
+        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
         const t0Net = s.hold_profit + s.net_profit;
         const excessAmt = s.net_profit;
         const items = [
-          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
-          { label: '持有净利(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         let annualExcess = null, yearsUsed = null;
         try {
@@ -2044,12 +2155,12 @@
           const t1m = new Date(s.end_date.slice(0,4) + '-' + s.end_date.slice(4,6) + '-' + s.end_date.slice(6,8)).getTime();
           if (t1m > t0m) {
             yearsUsed = (t1m - t0m) / (365.25 * 24 * 3600 * 1000);
-            annualExcess = excessAmt / cap * 100 / yearsUsed;
+            annualExcess = excessAmt / totalCap * 100 / yearsUsed;
           }
         } catch (e) { /* 忽略 */ }
         if (annualExcess !== null) {
           items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
-          const t0NetAnnual = t0Net / cap * 100 / yearsUsed;
+          const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
           items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
         }
         document.getElementById('cybt0MetricsGrid').innerHTML = items.map(it => `
@@ -2066,7 +2177,7 @@
         const statAvg = stat => {
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
-          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length;
+          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
@@ -2084,9 +2195,9 @@
         const yrHead = `
           <thead><tr>
             <th>年份</th>
-            <th>持有收益率①</th>
-            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 50万委托基准">①</sup></th>
-            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 持有收益率 + 做T差价净利率（相对50万委托基准）">①</sup></th>
+            <th>底仓贡献率①</th>
+            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 100万总资金基准">①</sup></th>
+            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 底仓贡献率 + 做T差价净利率（相对100万总资金基准）">①</sup></th>
           </tr></thead>`;
         const yrBody = (bt.yearly || []).map(y => {
           const t0d = typeof y.net_d === 'number' ? y.net_d : y.net;
@@ -2100,7 +2211,7 @@
         }).join('');
         document.getElementById('cybt0YearlyTable').innerHTML = yrHead + '<tbody>' + yrBody + '</tbody>';
         const yrNote = document.getElementById('cybt0YearlyNote');
-        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2023-08 ~ 2026-08，159915 五分钟K线），全部按50万做T委托基准算百分比，与你的总金额无关。`;
+        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2023-08 ~ 2026-08，159915 五分钟K线），全部按100万总资金基准（底仓50万+做T现金50万）算百分比，与你的总金额无关。`;
 
         // 参数与纪律
         const p = bt.param;
@@ -2125,7 +2236,7 @@
             </table>
           </div>
           <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，回测验证 0.001 滑点即可使做T收益大幅缩水。卖出单务必等买入成交后再挂。</div>
-          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有（159915 窗口持有+65.25%，做T+53.34%，总收益118.59%）；买-${buyPct}%/卖+${sellPct}%（1.3%价差）基于 726 天五分钟数据网格验证（1536组合），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。创业板做T为观察期模块，数据每交易日16:00后更新。</div>
+          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有（159915 窗口底仓贡献+32.63%，做T差价+26.67%，做T累计+59.29%，均按100万总资金基准）；买-${buyPct}%/卖+${sellPct}%（1.3%价差）基于 726 天五分钟数据网格验证（1536组合），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。创业板做T为观察期模块，数据每交易日16:00后更新。</div>
         `;
       } else {
         document.getElementById('cybt0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
@@ -2137,7 +2248,7 @@
       renderCybT0HistoryDaily(bt);
     }
 
-    // 创业板每日记录渲染（与红利 renderT0Daily 同构；观察期不开放实际卖出价录入）
+    // 创业板每日记录渲染（与红利 renderT0Daily 同构；含实际卖出价录入列，云端落库）
     function renderCybT0Daily(daily) {
       const meta = document.getElementById('cybt0DailyMeta');
       const body = document.getElementById('cybt0DailyBody');
@@ -2148,10 +2259,10 @@
         if (meta) meta.textContent = '';
         if (statsEl) statsEl.textContent = '';
         if (cards) cards.innerHTML = '';
-        body.innerHTML = '<tr><td colspan="12" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
+        body.innerHTML = '<tr><td colspan="13" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
         return;
       }
-      const records = daily.records;
+      const records = daily.records.map(applyCybT0AdjustToRecord);
       const total = records.length;
       if (meta) {
         const dt = daily.updated_at || '';
@@ -2166,13 +2277,14 @@
       const pend = cnt('待收盘');
       const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
       const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
-      const t0NetPct = Math.round((sumHoldPct + sumNetPct) * 100) / 100;
+      // 收益率统一按100万总资金基准（底仓50万+做T现金50万）：原50万委托基准的百分比÷2
+      const t0NetPct = Math.round((sumHoldPct + sumNetPct) / 2 * 100) / 100;
 
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
-          { label: '持有净利(一直拿着)', value: sumHoldPct.toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: sumNetPct.toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2188,7 +2300,7 @@
           const arr = records.filter(r => r.status === stat);
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
-          const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+          const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
@@ -2203,7 +2315,7 @@
           { label: '待收盘', count: pend, color: '#f1c40f', avg: statAvg('待收盘') }
         ]);
       }
-      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, false); // 最新在上（含买卖时间，观察期不开放录入）
+      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, true, { adjustments: cybT0Adjustments, saveFn: 'saveCybT0Adjust', recoverStatus: '仅买13:50卖出', stId: 'cybAdjSt_' }); // 最新在上（含买卖时间）+ 实际卖出价录入列（云端落库）
     }
 
     // 创业板历史明细
@@ -2535,11 +2647,11 @@
           历史业绩只用<b>有分钟数据的交易日</b>（2025-01-02 ~ 2026-08-05，共 385 天，9.2 万条 1 分钟数据），按分钟序列判定真实买卖：<br>
           <b>买入</b>=价格跌到买价（开盘×0.997）的那一分钟；<b>卖出</b>=买入后价格涨到卖价（开盘×1.008）的那一分钟；没卖到就 14:50 卖出。<br>
           买卖时间精确到分钟，全部可复核。<br><br>
-          <b>核心数字</b>：做T累计净利 = 持有（一直拿着）+ 做T差价，均为真实成交结果：<div class="c-formula">做T累计净利 32.71% = 持有 5.82% + 做T差价 26.89%（相对50万委托基准）</div>
+          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果：<div class="c-formula">做T累计净利 16.36% = 底仓贡献 2.91% + 做T差价 13.44%（相对100万总资金基准：底仓50万+做T现金50万）</div>
           无任何折算、无估算。` },
         { id: 'caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
           数据源：<b>free-stockdb + baostock 双源交叉验证</b>的 515180 分钟数据，结果一致。<br>
-          v2 阈值（买0.3%/卖0.8%）来自 385 天分钟回测：真实双边占比 <b>89.2%</b>，做T净利 <b>+13.44万（超额 +26.89%）</b>，胜率 60%。<br>
+          v2 阈值（买0.3%/卖0.8%）来自 385 天分钟回测：真实双边占比 <b>89.2%</b>，做T净利 <b>+13.44万（超额 +13.44%）</b>，胜率 60%。<br>
           仅买 212 天中 104 天盈利（14:50 价在买价上方），108 天亏损，净额约 −5.76万（日均 −272元），主要亏损集中在大跌日。` }
       ];
     }
@@ -2576,38 +2688,40 @@
     }
 
     // 生成每日明细行 HTML（每日记录与历史每日明细共用；showTime=true 时输出买卖时间列）
-    function buildT0RowsHTML(records, showTime, showAdjust) {
+    // adjCtx 为可选参数：{ adjustments, saveFn, recoverStatus, stId }，默认红利做T上下文；创业板传自己的录入存储（stId 前缀避免两模块同名 id 冲突）
+    function buildT0RowsHTML(records, showTime, showAdjust, adjCtx) {
+      const ctx = adjCtx || { adjustments: t0Adjustments, saveFn: 'saveT0Adjust', recoverStatus: '仅买14:50卖出', stId: 't0AdjSt_' };
       return records.map(r => {
         const statusCls = r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || (r.status && String(r.status).indexOf('仅买') === 0)) ? 'warn' : 'gray';
         const trade = r.buy_filled === null ? '待'
           : (r.buy_filled ? '✓' : '—') + (r.sell_filled ? '✓' : '—');
         const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(2) + '%';
-        // 当日净利(扣手续费) = 底仓持有收益 + 做T差价净利（策略当日实际收益）
+        // 当日净利(扣手续费) = 底仓持有收益 + 做T差价净利（策略当日实际收益，100万总资金基准÷2）
         const dayNet = (r.hold_pct === null || r.hold_pct === undefined || r.net_pct === null || r.net_pct === undefined)
-          ? null : Math.round((r.hold_pct + r.net_pct) * 100) / 100;
-        // 当日超额 = 当日净利 - 当日持有收益 = 做T差价净利
-        const dayEx = (r.net_pct === null || r.net_pct === undefined) ? null : r.net_pct;
+          ? null : Math.round((r.hold_pct + r.net_pct) / 2 * 100) / 100;
+        // 当日超额 = 当日净利 - 当日持有收益 = 做T差价净利（100万总资金基准÷2）
+        const dayEx = (r.net_pct === null || r.net_pct === undefined) ? null : Math.round(r.net_pct / 2 * 100) / 100;
         // 0% 既非盈也非亏 → 灰色；正红负绿
         const netCls = dayNet === null ? 'gray' : (dayNet === 0 ? 'gray' : (dayNet > 0 ? 'pl' : 'mn'));
         const exCls = dayEx === null ? 'gray' : (dayEx === 0 ? 'gray' : (dayEx > 0 ? 'pl' : 'mn'));
         const timeCells = showTime ? `<td>${r.buy_time || '—'}</td><td>${r.sell_time || '—'}</td>` : '';
         // 14:50时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
         const rp1450 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
-        // 实际卖出价：默认=真实成交价——仅买14:50卖出日取当日14:50价（recover_price，与当日净利计算同价），其余日取卖出监控价；支持手动修改并云端落库
+        // 实际卖出价：默认=真实成交价——仅买恢复卖出日取当日恢复价（recover_price，与当日净利计算同价），其余日取卖出监控价；支持手动修改并云端落库
         let adjustCell = '';
         if (showAdjust) {
-          const defVal = (r.status === '仅买14:50卖出' && r.recover_price != null)
+          const defVal = (r.status === ctx.recoverStatus && r.recover_price != null)
             ? Number(r.recover_price).toFixed(3)
             : ((r.sell_p === null || r.sell_p === undefined) ? '' : Number(r.sell_p).toFixed(3));
-          const saved = t0Adjustments[r.date];
+          const saved = ctx.adjustments[r.date];
           const val = (saved !== undefined && saved !== null) ? Number(saved).toFixed(3) : defVal;
           adjustCell = `<td class="t0-adjust-cell">
             <input class="t0-adjust-input${saved !== undefined ? ' saved' : ''}" type="number" step="0.001" min="0" max="100"
               value="${val}" data-date="${r.date}" data-def="${defVal}"
               ${T0_FC_API ? '' : 'disabled title="未连接云端保存服务，录入不会持久化"'}
-              onchange="saveT0Adjust(this,'${r.date}')">
-            <span class="t0-adjust-save" id="t0AdjSt_${r.date}"></span>
+              onchange="${ctx.saveFn}(this,'${r.date}')">
+            <span class="t0-adjust-save" id="${ctx.stId}${r.date}"></span>
           </td>`;
         }
         return `<tr>
@@ -2694,15 +2808,15 @@
       const both = cnt('双边成交'), recover = cnt('仅买14:50卖出'), skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
       const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
       const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
-      // 做T累计净利 = 底仓持有收益 + 做T差价净利（策略实际收益，扣手续费后）
-      const t0NetPct = Math.round((sumHoldPct + sumNetPct) * 100) / 100;
+      // 收益率统一按100万总资金基准（底仓50万+做T现金50万）：原50万委托基准的百分比÷2
+      const t0NetPct = Math.round((sumHoldPct + sumNetPct) / 2 * 100) / 100;
 
       // 顶部统计卡（与历史业绩统一：3张百分比卡，均为分钟级真实口径）
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
-          { label: '持有净利(一直拿着)', value: sumHoldPct.toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: sumNetPct.toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2719,7 +2833,7 @@
           const arr = records.filter(r => r.status === stat);
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
-          const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+          const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         // 仅买14:50卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
@@ -2885,6 +2999,9 @@
         // 实际卖出价：后台加载云端已保存记录（FC+OSS），完成后重渲染每日记录表以显示已录入值
         initT0Adjust().then(() => {
           if (t0Data && t0Data.daily) renderT0Daily(t0Data.daily);
+        });
+        initCybT0Adjust().then(() => {
+          if (cybT0Data && cybT0Data.daily) renderCybT0Daily(cybT0Data.daily);
         });
       } catch (e) {
         document.getElementById('loading').innerHTML = '数据加载失败：' + e.message + '<br>请确保 frontend_data.json 存在';
