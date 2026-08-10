@@ -1046,8 +1046,8 @@
                 <th>卖出价</th>
                 <th>14:00价</th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="kcbt0DailyBody"></tbody>
@@ -1090,8 +1090,8 @@
                 <th>卖出价</th>
                 <th>14:00价</th>
                 <th>成交</th>
-                <th>当日净利(扣费)</th>
-                <th>当日超额</th>
+                <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
+                <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
               </tr>
             </thead>
             <tbody id="kcbt0HistoryDailyBody"></tbody>
@@ -2083,7 +2083,7 @@
           历史业绩用 <b>2023-08-09 ~ 2026-08-07 共 726 个交易日</b>的 159915 五分钟K线（双源合并验证），按分钟序列判定真实买卖：<br>
           <b>买入</b>=价格跌到买价（开盘×0.994）的那一根；<b>卖出</b>=买入后价格涨到卖价（开盘×1.007）的那一根；没卖到就 13:50 手动卖出。<br>
           买卖时间精确到分钟，全部可复核。<br><br>
-          <b>核心数字</b>：做T累计净利 = 持有（一直拿着）+ 做T差价，均为真实成交结果。<br>
+          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果。<br>
           无任何折算、无估算。` },
         { id: 'cyb-caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
           数据源：<b>pytdx + baostock 双源交叉验证</b>的 159915 五分钟数据（重叠期收盘平均差异 0.0006 元），并与 pytdx 一分钟数据交叉验证结论一致。<br>
@@ -2361,12 +2361,12 @@
           历史业绩用 <b>2024-07-18 ~ 2026-08-07 共 499 个交易日</b>的 588000 五分钟K线（pytdx），按分钟序列判定真实买卖：<br>
           <b>买入</b>=价格跌到买价（开盘×0.990）的那一根；<b>卖出</b>=买入后价格涨到卖价（开盘×1.014）的那一根；没卖到就 14:00 手动卖出。<br>
           买卖时间精确到分钟，全部可复核。<br><br>
-          <b>核心数字</b>：做T累计净利 = 持有（一直拿着）+ 做T差价，均为真实成交结果。<br>
+          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果。<br>
           无任何折算、无估算。` },
         { id: 'kcb-caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
           数据源：<b>pytdx</b> 的 588000 五分钟数据（2024-07-18 起，共499个交易日）。<br>
           参数来自 <b>489 组网格遍历</b>（买卖阈值×了结时间×高开/低开跳过）：最优 = 买1.0%/卖1.4% + 14:00了结 + 高开>3%/低开>2%跳过。<br>
-          全周期做T净利 <b>+28.46万（+56.93%）</b>，3 个年度做T净利全为正（+21.74%/+9.81%/+25.38%）。` }
+          全周期做T净利 <b>+28.46万（+28.46%）</b>，3 个年度做T净利全为正（+10.87%/+4.90%/+12.69%）。` }
       ].map(d => `
         <div class="caliber-item" id="${d.id}">
           <div class="c-title"><span class="c-tag ${CALIBER[d.tag].cls}">${CALIBER[d.tag].ch}</span>${d.title}</div>
@@ -2417,13 +2417,15 @@
         document.getElementById('kcbt0BacktestRange').textContent =
           `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（分钟级真实成交）`;
         const cap = (bt.param && bt.param.capital) || 500000;
-        const pct = v => (v / cap * 100).toFixed(2) + '%';
+        // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
+        const totalCap = cap * 2;
+        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
         const t0Net = s.hold_profit + s.net_profit;
         const excessAmt = s.net_profit;
         const items = [
-          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
-          { label: '持有净利(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         let annualExcess = null, yearsUsed = null;
         try {
@@ -2431,12 +2433,12 @@
           const t1m = new Date(s.end_date.slice(0,4) + '-' + s.end_date.slice(4,6) + '-' + s.end_date.slice(6,8)).getTime();
           if (t1m > t0m) {
             yearsUsed = (t1m - t0m) / (365.25 * 24 * 3600 * 1000);
-            annualExcess = excessAmt / cap * 100 / yearsUsed;
+            annualExcess = excessAmt / totalCap * 100 / yearsUsed;
           }
         } catch (e) { /* 忽略 */ }
         if (annualExcess !== null) {
           items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
-          const t0NetAnnual = t0Net / cap * 100 / yearsUsed;
+          const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
           items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
         }
         document.getElementById('kcbt0MetricsGrid').innerHTML = items.map(it => `
@@ -2453,7 +2455,7 @@
         const statAvg = stat => {
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
-          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length;
+          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
@@ -2471,9 +2473,9 @@
         const yrHead = `
           <thead><tr>
             <th>年份</th>
-            <th>持有收益率①</th>
-            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 50万委托基准">①</sup></th>
-            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 持有收益率 + 做T差价净利率（相对50万委托基准）">①</sup></th>
+            <th>底仓贡献率①</th>
+            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 100万总资金基准">①</sup></th>
+            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 底仓贡献率 + 做T差价净利率（相对100万总资金基准）">①</sup></th>
           </tr></thead>`;
         const yrBody = (bt.yearly || []).map(y => {
           const t0d = typeof y.net_d === 'number' ? y.net_d : y.net;
@@ -2487,7 +2489,7 @@
         }).join('');
         document.getElementById('kcbt0YearlyTable').innerHTML = yrHead + '<tbody>' + yrBody + '</tbody>';
         const yrNote = document.getElementById('kcbt0YearlyNote');
-        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2024-07 ~ 2026-08，588000 五分钟K线），全部按50万做T委托基准算百分比，与你的总金额无关。`;
+        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2024-07 ~ 2026-08，588000 五分钟K线），全部按100万总资金基准（底仓50万+做T现金50万）算百分比，与你的总金额无关。`;
 
         // 参数与纪律
         const p = bt.param;
@@ -2512,7 +2514,7 @@
             </table>
           </div>
           <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，回测验证 0.001 滑点即可使做T收益大幅缩水。卖出单务必等买入成交后再挂。</div>
-          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有（588000 窗口持有+143.06%，做T+56.93%，总收益199.99%）；买-${buyPct}%/卖+${sellPct}%（2.4%价差）基于 499 天五分钟数据网格验证（489组合），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。科创50做T为观察期模块，数据每交易日16:00后更新。</div>
+          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有（588000 窗口底仓贡献+71.53%，做T差价+28.46%，做T累计+100.00%，均按100万总资金基准）；买-${buyPct}%/卖+${sellPct}%（2.4%价差）基于 499 天五分钟数据网格验证（489组合），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。科创50做T为观察期模块，数据每交易日16:00后更新。</div>
         `;
       } else {
         document.getElementById('kcbt0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
@@ -2553,13 +2555,14 @@
       const pend = cnt('待收盘');
       const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
       const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
-      const t0NetPct = Math.round((sumHoldPct + sumNetPct) * 100) / 100;
+      // 收益率统一按100万总资金基准（底仓50万+做T现金50万）：原50万委托基准的百分比÷2
+      const t0NetPct = Math.round((sumHoldPct + sumNetPct) / 2 * 100) / 100;
 
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价（分钟级真实成交）', cal: 1 },
-          { label: '持有净利(一直拿着)', value: sumHoldPct.toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '同区间持有基准', cal: 1 },
-          { label: '累计超额收益', value: sumNetPct.toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利（分钟级真实成交）', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2575,7 +2578,7 @@
           const arr = records.filter(r => r.status === stat);
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
-          const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+          const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
