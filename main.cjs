@@ -318,11 +318,12 @@ async function _runDailyForStrategy(today, strat, options) {
 // 实际生产中应使用交易日历
 // ============================================================
 function nextTradeDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00+08:00');
-  d.setDate(d.getDate() + 1);
-  // 跳过周末
-  while (d.getDay() === 0 || d.getDay() === 6) {
-    d.setDate(d.getDate() + 1);
+  const parts = dateStr.split('-').map(Number);
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  d.setUTCDate(d.getUTCDate() + 1);
+  // 跳过周末（UTC 安全解析，避免 GitHub Actions UTC 环境日期偏移）
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+    d.setUTCDate(d.getUTCDate() + 1);
   }
   return d.toISOString().slice(0, 10);
 }
@@ -370,12 +371,13 @@ async function catchup(startDateArg) {
   const missedDates = [];
   let checkDate = startCheckDate;
   while (checkDate < today) {
-    const dayOfWeek = new Date(checkDate + 'T00:00:00+08:00').getDay();
+    const parts = checkDate.split('-').map(Number);
+    const dayOfWeek = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       missedDates.push(checkDate);
     }
-    const d = new Date(checkDate + 'T00:00:00+08:00');
-    d.setDate(d.getDate() + 1);
+    const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    d.setUTCDate(d.getUTCDate() + 1);
     checkDate = d.toISOString().slice(0, 10);
   }
 

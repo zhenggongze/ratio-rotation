@@ -817,8 +817,8 @@
                 <th>收盘</th>
                 <th>买入价</th>
                 <th>卖出价</th>
-                <th>14:50价</th>
-                <th>实际卖出价<sup class="t0-badge-idx" title="默认=卖出价，可手动修改；仅买14:50卖出遇到滑点时按实际成交价录入，保存后云端落库，刷新/换设备不丢">✎</sup></th>
+                <th>14:57价</th>
+                <th>实际卖出价<sup class="t0-badge-idx" title="默认=卖出价，可手动修改；仅买14:57卖出遇到滑点时按实际成交价录入，保存后云端落库，刷新/换设备不丢">✎</sup></th>
                 <th>成交</th>
                 <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
                 <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
@@ -834,7 +834,7 @@
           <summary>📐 每日记录数据口径说明：① 分钟级真实成交（点击展开）</summary>
           <div class="caliber-item" id="caliber-daily-1">
             <div class="c-title"><span class="c-tag idx-real">①</span>每日记录与历史业绩同一判定口径</div>
-            <div>收盘后（15:30 后）用当日 1 分钟K线（开盘/最高/最低/收盘）判定真实买卖成交：<b>买入</b>=某分钟最低价跌到买价（开盘×0.997）；<b>卖出</b>=买入后某分钟最高价涨到卖价（开盘×1.008）；没卖到就 14:50 卖出。买卖时间精确到分钟，无任何日线猜测。</div>
+            <div>收盘后（15:30 后）用当日 1 分钟K线（开盘/最高/最低/收盘）判定真实买卖成交：<b>买入</b>=某分钟最低价跌到买价（开盘×0.997）；<b>卖出</b>=买入后某分钟最高价涨到卖价（开盘×1.008）；没卖到就 14:57 卖出。买卖时间精确到分钟，无任何日线猜测。</div>
           </div>
         </details>
       </div>
@@ -864,7 +864,7 @@
                 <th>收盘</th>
                 <th>买入价</th>
                 <th>卖出价</th>
-                <th>14:50价</th>
+                <th>14:57价</th>
                 <th>成交</th>
                 <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
                 <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
@@ -2001,14 +2001,14 @@
           const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2;
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
-        // 仅买14:50卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
-        const buyOnlyRows = (bt.daily || []).filter(r => r.status === '仅买14:50卖出');
+        // 仅买14:57卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
+        const buyOnlyRows = (bt.daily || []).filter(r => r.status === '仅买14:57卖出');
         const buyOnlyPosPct = buyOnlyRows.length
           ? Math.round(buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100)
           : null;
         document.getElementById('t0StatusDist').innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: s.both_days, color: 'var(--pos)', avg: statAvg('双边成交') },
-          { label: '仅买14:50卖出', count: s.buy_only_days, color: '#e67e22', avg: statAvg('仅买14:50卖出'), posPct: buyOnlyPosPct },
+          { label: '仅买14:57卖出', count: s.buy_only_days, color: '#e67e22', avg: statAvg('仅买14:57卖出'), posPct: buyOnlyPosPct },
           { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
           { label: '低开跳过', count: s.skip_days, color: '#7f8c8d', avg: statAvg('跳过') }
         ]);
@@ -2047,7 +2047,7 @@
             <table class="t0-params-table">
               <thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead>
               <tbody>
-                <tr><td>策略版本</td><td>${p.version || 'v2'}</td><td>v2：买0.3%/卖0.8%，未卖出 14:50 了结（2026-08-06 生效）</td></tr>
+                <tr><td>策略版本</td><td>${p.version || 'v2'}</td><td>v2：买0.3%/卖0.8%，未卖出 14:57 了结（2026-08-06 生效）</td></tr>
                 <tr><td>标的</td><td>${p.symbol}</td><td>${p.name}（易方达中证红利ETF）</td></tr>
                 <tr><td>买入系数</td><td>×${p.buy_k}</td><td>买入监控价 = 开盘价 × ${p.buy_k}（跌${buyPct}%触发）</td></tr>
                 <tr><td>卖出系数</td><td>×${p.sell_k}</td><td>卖出监控价 = 开盘价 × ${p.sell_k}（涨${sellPct}%触发）</td></tr>
@@ -2055,12 +2055,12 @@
                 <tr><td>佣金</td><td>万${p.commission_rate * 10000}</td><td>双边计费基准</td></tr>
                 <tr><td>跳过条件</td><td>低开超${p.skip_drop * 100}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
                 <tr><td>执行方式</td><td>先买后卖</td><td>条件单选「限价委托」+价格类型「即时现价」=触发瞬间按最新价挂限价单（买成交≤监控价/卖成交≥监控价，匹配回测）；手动挂单则限价直接填监控价。正T保护不卖底仓</td></tr>
-                <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 手动市价卖出等量，不过夜</td></tr>
+                <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:57 手动市价卖出等量，不过夜</td></tr>
               </tbody>
             </table>
           </div>
-          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，实测 0.001 滑点即可使做T收益从 +13.44% 变为 -4.55%。卖出单务必等买入成交后再挂。</div>
-          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有；v2 买-${buyPct}%/卖+${sellPct}%（1.1%价差）基于385天真实1分钟数据验证（真实双边占比89.2%，胜率60%），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。</div>
+          <div class="ratio-ruler-note" style="border-left-color:#e74c3c;"><strong>⚠ 委托铁律：</strong>条件单选<strong>「限价委托」</strong>+价格类型<strong>「即时现价」</strong>（触发瞬间按最新价挂限价单，买入成交价≤监控价、卖出成交价≥监控价，与回测"按监控价成交"一致）；手动挂单则限价直接填监控价。切勿用「即时卖一价/对手方最优」——按盘口跳价，每次成交约 0.001 元滑点会显著侵蚀做T利润，实际收益将明显低于回测理论值。卖出单务必等买入成交后再挂。</div>
+          <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有；v2 买-${buyPct}%/卖+${sellPct}%（1.1%价差）基于385天真实1分钟数据验证（真实双边占比89.2%，胜率58%），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。</div>
         `;
       } else {
         document.getElementById('t0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
@@ -2648,14 +2648,14 @@
       return [
         { id: 'caliber-1', tag: 1, title: '真实数据 —— 分钟级真实成交，页面主要数字都基于它', html: `
           历史业绩只用<b>有分钟数据的交易日</b>（2025-01-02 ~ 2026-08-05，共 385 天，9.2 万条 1 分钟数据），按分钟序列判定真实买卖：<br>
-          <b>买入</b>=价格跌到买价（开盘×0.997）的那一分钟；<b>卖出</b>=买入后价格涨到卖价（开盘×1.008）的那一分钟；没卖到就 14:50 卖出。<br>
+          <b>买入</b>=价格跌到买价（开盘×0.997）的那一分钟；<b>卖出</b>=买入后价格涨到卖价（开盘×1.008）的那一分钟；没卖到就 14:57 卖出。<br>
           买卖时间精确到分钟，全部可复核。<br><br>
-          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果：<div class="c-formula">做T累计净利 16.36% = 底仓贡献 2.91% + 做T差价 13.44%（相对100万总资金基准：底仓50万+做T现金50万）</div>
+          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果：<div class="c-formula">做T累计净利 18.98% = 底仓贡献 2.91% + 做T差价 16.07%（相对100万总资金基准：底仓50万+做T现金50万）</div>
           无任何折算、无估算。` },
         { id: 'caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
           数据源：<b>free-stockdb + baostock 双源交叉验证</b>的 515180 分钟数据，结果一致。<br>
-          v2 阈值（买0.3%/卖0.8%）来自 385 天分钟回测：真实双边占比 <b>89.2%</b>，做T净利 <b>+13.44万（超额 +13.44%）</b>，胜率 60%。<br>
-          仅买 212 天中 104 天盈利（14:50 价在买价上方），108 天亏损，净额约 −5.76万（日均 −272元），主要亏损集中在大跌日。` }
+          v2 阈值（买0.3%/卖0.8%）来自 385 天分钟回测：真实双边占比 <b>89.2%</b>，做T净利 <b>+16.07万（超额 +16.07%）</b>，胜率 58%。<br>
+          仅买 212 天中 108 天盈利（14:57 价在买价上方），104 天亏损，净额约 −2.08万（日均 −98元），主要亏损集中在大跌日。` }
       ];
     }
     function renderCaliberPanel() {
@@ -2693,7 +2693,7 @@
     // 生成每日明细行 HTML（每日记录与历史每日明细共用；showTime=true 时输出买卖时间列）
     // adjCtx 为可选参数：{ adjustments, saveFn, recoverStatus, stId }，默认红利做T上下文；创业板传自己的录入存储（stId 前缀避免两模块同名 id 冲突）
     function buildT0RowsHTML(records, showTime, showAdjust, adjCtx) {
-      const ctx = adjCtx || { adjustments: t0Adjustments, saveFn: 'saveT0Adjust', recoverStatus: '仅买14:50卖出', stId: 't0AdjSt_' };
+      const ctx = adjCtx || { adjustments: t0Adjustments, saveFn: 'saveT0Adjust', recoverStatus: '仅买14:57卖出', stId: 't0AdjSt_' };
       return records.map(r => {
         const statusCls = r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || (r.status && String(r.status).indexOf('仅买') === 0)) ? 'warn' : 'gray';
@@ -2709,12 +2709,12 @@
         const netCls = dayNet === null ? 'gray' : (dayNet === 0 ? 'gray' : (dayNet > 0 ? 'pl' : 'mn'));
         const exCls = dayEx === null ? 'gray' : (dayEx === 0 ? 'gray' : (dayEx > 0 ? 'pl' : 'mn'));
         const timeCells = showTime ? `<td>${r.buy_time || '—'}</td><td>${r.sell_time || '—'}</td>` : '';
-        // 14:50时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
-        const rp1450 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
+        // 14:57时点价格：仅买未卖出时的实际恢复卖出价（=当日净利计算用价）；双边成交日为参考价
+        const rp1457 = (r.recover_price === null || r.recover_price === undefined) ? '—' : Number(r.recover_price).toFixed(3);
         // 实际卖出价：默认=真实成交价——仅买恢复卖出日取当日恢复价（recover_price，与当日净利计算同价），其余日取卖出监控价；支持手动修改并云端落库
         let adjustCell = '';
         if (showAdjust) {
-          const defVal = (r.status === ctx.recoverStatus && r.recover_price != null)
+          const defVal = (String(r.status).indexOf('仅买') === 0 && r.recover_price != null)
             ? Number(r.recover_price).toFixed(3)
             : ((r.sell_p === null || r.sell_p === undefined) ? '' : Number(r.sell_p).toFixed(3));
           const saved = ctx.adjustments[r.date];
@@ -2735,7 +2735,7 @@
           <td>${r.close ? Number(r.close).toFixed(3) : '—'}</td>
           <td>${Number(r.buy_p).toFixed(3)}</td>
           <td>${Number(r.sell_p).toFixed(3)}</td>
-          <td>${rp1450}</td>
+          <td>${rp1457}</td>
           ${adjustCell}
           <td>${trade}</td>
           <td class="${netCls}">${fmtPct(dayNet)}</td>
@@ -2808,7 +2808,7 @@
         meta.innerHTML = `${records[0].date}~${records[total - 1].date} ${timePart}，${total}个交易日 ${calBadge(1)}`;
       }
       const cnt = s => records.filter(r => r.status === s).length;
-      const both = cnt('双边成交'), recover = cnt('仅买14:50卖出'), skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
+      const both = cnt('双边成交'), recover = records.filter(r => String(r.status).indexOf('仅买') === 0).length, skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
       const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
       const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
       // 收益率统一按100万总资金基准（底仓50万+做T现金50万）：原50万委托基准的百分比÷2
@@ -2833,20 +2833,22 @@
       // 状态分布（全部选项，加总=100%；与历史状态分布同一维度：含各类型平均当日做T净利%）
       if (statsEl) {
         const statAvg = stat => {
-          const arr = records.filter(r => r.status === stat);
+          const arr = (String(stat).indexOf('仅买') === 0)
+            ? records.filter(r => String(r.status).indexOf('仅买') === 0)
+            : records.filter(r => r.status === stat);
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
           return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
         };
-        // 仅买14:50卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
-        const dBuyOnlyRows = records.filter(r => r.status === '仅买14:50卖出');
+        // 仅买（14:50历史/14:57新口径兼容）：正收益天数占比（做T净利>0 的天数 / 总天数）
+        const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
           ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
           : null;
         statsEl.innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
-          { label: '仅买14:50卖出', count: recover, color: '#e67e22', avg: statAvg('仅买14:50卖出'), posPct: dBuyOnlyPosPct },
+          { label: '仅买14:57卖出', count: recover, color: '#e67e22', avg: statAvg('仅买14:57卖出'), posPct: dBuyOnlyPosPct },
           { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
           { label: '低开跳过', count: skip, color: '#7f8c8d', avg: statAvg('跳过') },
           { label: '待收盘', count: pend, color: '#f1c40f', avg: statAvg('待收盘') }

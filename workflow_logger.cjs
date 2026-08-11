@@ -277,14 +277,10 @@ async function cmdFinish() {
            `🌐 访问: https://portfolio-analysis.top/ratio-rotation/`;
   }
 
-  // 幂等跳过时不重复推送；非交易日不推送报告
-  if ((pipelineAbsent && finalStatus === 'success') || isNonTrading) {
-    console.log(isNonTrading
-      ? '\n  ℹ️ 非交易日，跳过工作流报告推送'
-      : '\n  ℹ️ 今日数据已存在（幂等检查跳过流水线），不重复推送通知');
-  } else {
-    await pushNotification('创红轮动 工作流报告', body, finalStatus === 'success');
-  }
+  // 工作流报告推送已停用（2026-08-10 用户要求：任务照常执行，不再推送监控报告）
+  // 如需恢复，取消下面一行的注释即可
+  // await pushNotification('创红轮动 工作流报告', body, finalStatus === 'success');
+  console.log('  ℹ️ 工作流报告推送已停用（任务照常执行，报告已保存到本地日志）');
 
   // 保存报告
   fs.writeFileSync(lp, JSON.stringify(report, null, 2));

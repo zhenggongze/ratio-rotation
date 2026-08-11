@@ -305,7 +305,7 @@ function exportFrontendData() {
         buy_filled: r.buy_filled, sell_filled: r.sell_filled,
         buy_time: r.buy_time || null, sell_time: r.sell_time || null,
         hold_pct: r.hold_pct, net_pct: r.net_pct, excess_pct: r.excess_pct,
-        recover_price: r.recover_price != null ? r.recover_price : null   // 14:50时点价格（仅买未卖出时的实际恢复卖出价）
+        recover_price: r.recover_price != null ? r.recover_price : null   // 14:57时点价格（仅买未卖出时的实际恢复卖出价）
       }))
     };
     const t0BTPath = path.join(__dirname, 'public', 't0_backtest.json');

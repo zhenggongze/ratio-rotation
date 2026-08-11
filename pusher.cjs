@@ -103,26 +103,35 @@ async function sendPushWithRetry(text, desp, msgType, data) {
   return { success: false, error: '重试耗尽' };
 }
 
+// 把 YYYY-MM-DD 作为北京时间解析为 Date（用 UTC 存储，避免 GitHub Actions UTC 环境下 getDate/getDay 偏移一天）
+function parseBeijingDate(dateStr) {
+  const parts = String(dateStr).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+}
+
 // ============================================================
 // 日期格式化辅助
 // ============================================================
 function formatExecDate(execDate) {
   if (!execDate) return '';
-  const d = new Date(execDate + 'T00:00:00+08:00');
+  const d = parseBeijingDate(execDate);
+  if (!d) return '';
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const week = weekdays[d.getDay()];
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const week = weekdays[d.getUTCDay()];
   return `${month}月${day}日(${week})`;
 }
 
 function formatTodayDate(date) {
   if (!date) return '';
-  const d = new Date(date + 'T00:00:00+08:00');
+  const d = parseBeijingDate(date);
+  if (!d) return '';
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const week = weekdays[d.getDay()];
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const week = weekdays[d.getUTCDay()];
   return `${month}月${day}日(${week})`;
 }
 

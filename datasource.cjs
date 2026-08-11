@@ -273,8 +273,11 @@ function crossValidate(primary, backup) {
 async function fetchDailyData(date) {
   const note = [];
 
-  // 非交易日预判（周六/周日）
-  const dayOfWeek = new Date(date + 'T00:00:00+08:00').getDay();
+  // 非交易日预判（周六/周日）——用 UTC 安全解析，避免 GitHub Actions UTC 环境 getDay 偏移一天
+  const dayOfWeek = (() => {
+    const parts = date.split('-').map(Number);
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
+  })();
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     return {
       date,
@@ -439,8 +442,10 @@ async function fetchHistoryData(startDate, endDate) {
 async function fetchDailyDataFromHistory(date) {
   try {
     // 拉取 date 到 date+2天 的K线（确保包含 date 当天）
-    const d = new Date(date + 'T00:00:00+08:00');
-    d.setDate(d.getDate() + 2);
+    // 按北京时间解析，跨时区（GitHub Actions UTC）结果一致
+    const dp = date.split('-').map(Number);
+    const d = new Date(Date.UTC(dp[0], dp[1] - 1, dp[2]));
+    d.setUTCDate(d.getUTCDate() + 2);
     const endDate = d.toISOString().slice(0, 10);
 
     const [cybHistory, hliHistory] = await Promise.all([
@@ -521,8 +526,11 @@ async function fetchDailyDataFromHistory(date) {
 async function fetchKcbDailyData(date) {
   const note = [];
 
-  // 非交易日预判（周六/周日）
-  const dayOfWeek = new Date(date + 'T00:00:00+08:00').getDay();
+  // 非交易日预判（周六/周日）——用 UTC 安全解析，避免 GitHub Actions UTC 环境 getDay 偏移一天
+  const dayOfWeek = (() => {
+    const parts = date.split('-').map(Number);
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
+  })();
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     return {
       date,
@@ -639,8 +647,10 @@ async function fetchKcbDailyData(date) {
 // ============================================================
 async function fetchKcbDailyDataFromHistory(date) {
   try {
-    const d = new Date(date + 'T00:00:00+08:00');
-    d.setDate(d.getDate() + 2);
+    // 按北京时间解析，跨时区（GitHub Actions UTC）结果一致
+    const dp = date.split('-').map(Number);
+    const d = new Date(Date.UTC(dp[0], dp[1] - 1, dp[2]));
+    d.setUTCDate(d.getUTCDate() + 2);
     const endDate = d.toISOString().slice(0, 10);
 
     const [kcbHistory, hliHistory] = await Promise.all([

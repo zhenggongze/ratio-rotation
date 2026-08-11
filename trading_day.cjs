@@ -28,6 +28,13 @@ function todayBeijing() {
   return now.toISOString().slice(0, 10);
 }
 
+// 把 YYYY-MM-DD 作为北京时间解析为 Date（用 UTC 存储，避免 GitHub Actions UTC 环境 getDay/toISOString 偏移一天）
+function parseBeijingDate(dateStr) {
+  const parts = String(dateStr).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+}
+
 // 判断某天是否为 A 股交易日
 // 优先用官方日历；无日历时回退：周末(周六/周日)非交易日，其余视为交易日
 function isTradingDay(dateStr) {
@@ -36,22 +43,24 @@ function isTradingDay(dateStr) {
     if (dateStr in cal) return cal[dateStr] === 1;
     return false; // 超出日历范围（如更早/更晚日期）视为非交易日，宁可漏不可错
   }
-  const d = new Date(dateStr + 'T00:00:00+08:00');
-  const day = d.getDay();
+  const d = parseBeijingDate(dateStr);
+  if (!d) return false;
+  const day = d.getUTCDay();
   return day >= 1 && day <= 5;
 }
 
 // 获取最近的前一个交易日（供"休市时展示最近状态"用）
 function prevTradingDay(dateStr) {
   const cal = loadCalendar();
-  const d = new Date(dateStr + 'T00:00:00+08:00');
+  const d = parseBeijingDate(dateStr);
+  if (!d) return null;
   for (let i = 0; i < 30; i++) {
-    d.setDate(d.getDate() - 1);
+    d.setUTCDate(d.getUTCDate() - 1);
     const key = d.toISOString().slice(0, 10);
     if (cal) {
       if (cal[key] === 1) return key;
     } else {
-      const day = d.getDay();
+      const day = d.getUTCDay();
       if (day >= 1 && day <= 5) return key;
     }
   }

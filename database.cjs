@@ -195,8 +195,9 @@ function archiveMonthlyIfNeeded(latestBackupFile) {
   const monthlyDir = path.join(config.backupDir, 'monthly');
   if (!fs.existsSync(monthlyDir)) fs.mkdirSync(monthlyDir, { recursive: true });
 
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  // 北京时间月份（用 UTC+8 计算，避免 UTC 环境月份偏移）
+  const now = new Date(Date.now() + config.beijingOffset);
+  const yearMonth = now.toISOString().slice(0, 7);
   const monthlyFile = path.join(monthlyDir, `monthly_${yearMonth}.json`);
 
   // 当月已归档则跳过

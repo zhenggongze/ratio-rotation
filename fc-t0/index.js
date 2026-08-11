@@ -3,9 +3,11 @@
 //   - 数据存 OSS 独立文件 ratio-rotation/data/t0/t0_adjustments.json（与每日自动生成的 t0_daily.json 分离，不被系统重算覆盖）
 //   - 每次保存先写永不删除的备份，再原子写入主文件
 //   - 提供 /api/t0/save 与 /api/t0/load，前端录入实际卖出价后即时落库，刷新/换设备不丢
+// 模块隔离：save 支持可选 module 参数（t0=红利 / cyb=创业板 / kcb=科创50），key 为 module:date；
+//           不传 module 时沿用旧的 date 裸 key（兼容红利已存数据），load 原样返回全部记录由前端按前缀过滤。
 // 端点：
 //   GET  /api/t0/load           拉取全部实际卖出价修正记录
-//   POST /api/t0/save           保存单日修正 { date, actual_sell_price }
+//   POST /api/t0/save           保存单日修正 { date, actual_sell_price, module? }
 //   GET  /api/t0/health         健康检查
 'use strict';
 
@@ -142,17 +144,24 @@ exports.handler = async (event, context) => {
 
     const date = String(incoming.date || '').trim();
     const price = Number(incoming.actual_sell_price);
+    // 模块隔离：允许的 module 前缀，防止异常 key 写入
+    const module = String(incoming.module || '').trim();
+    const moduleOk = module === '' || module === 't0' || module === 'cyb' || module === 'kcb';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return jsonResp(400, { success: false, error: 'date 格式应为 YYYY-MM-DD' });
     }
     if (!(price > 0) || price > 100) {
       return jsonResp(400, { success: false, error: '实际卖出价应为正数且不超过100' });
     }
+    if (!moduleOk) {
+      return jsonResp(400, { success: false, error: 'module 仅支持 t0/cyb/kcb（可省略）' });
+    }
+    const key = module ? module + ':' + date : date;
 
     try {
       const existing = await loadDataFromOSS();
       existing.records = existing.records || {};
-      existing.records[date] = {
+      existing.records[key] = {
         actual_sell_price: Math.round(price * 1000) / 1000,
         updated_at: new Date().toISOString()
       };

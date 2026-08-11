@@ -73,7 +73,7 @@ function computeSignal(openPrice, prevClose) {
 
 function currentPhase() {
   const now = new Date();
-  const hm = now.getHours() * 60 + now.getMinutes() + 8 * 60;
+  const hm = now.getUTCHours() * 60 + now.getUTCMinutes() + 8 * 60; // UTC → 北京时间（任何时区一致）
   const total = hm % (24 * 60);
   if (9 * 60 + 15 <= total && total < 9 * 60 + 26) return 'collection';
   if (9 * 60 + 26 <= total && total <= 9 * 60 + 40) return 'open_set';
