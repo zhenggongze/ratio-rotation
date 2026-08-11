@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { config, getStrategyConfig, getKcbStrategyConfig } = require('./config.cjs');
 const { loadData, saveData, backup, log, nowBeijing, todayBeijingDate,
-  getLatestRecord, getRecordByDate, upsertDailyRecord, addTradeLog,
+  getLatestRecord, getRecordBefore, getRecordByDate, upsertDailyRecord, addTradeLog,
   addConsistencyLog, listMonthlyArchives, restoreFromMonthlyArchive
 } = require('./database.cjs');
 const { calcRatio, determineSignal, getDistanceToNextAction } = require('./strategy.cjs');
@@ -181,7 +181,10 @@ async function _runDailyForStrategy(today, strat, options) {
 
   // 第二步：读取T-1日的daily_record
   console.log('\n[2/6] 读取当前权重...');
-  const prevRecord = getLatestRecord(data);
+  // 用 getRecordBefore 而非 getLatestRecord：
+  // 重复运行同一天（force_refresh/幂等重跑）时数据里已有当天记录，
+  // getLatestRecord 会取到当天自己导致 prevClose 前值错误（当日收益≈0 的假象）
+  const prevRecord = getRecordBefore(data, today);
   let wYesterday = 0;
   let wNow = 0;
 
