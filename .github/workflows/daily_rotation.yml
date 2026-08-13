@@ -112,8 +112,8 @@ jobs:
           FORCE_REFRESH: ${{ inputs.force_refresh == true && '1' || '' }}
 
       - name: 上传更新后的数据到 OSS（状态持久化）
-        # 无条件上传：t0_daily.cjs 每次运行都会更新今日做T记录（含14:57价），
-        # 若此处沿用"幂等跳过"条件，幂等命中时会丢失 t0_daily 更新（历史教训：8-07 14:57价缺失）
+        # 无条件上传：t0_daily.cjs 每次运行都会更新今日做T记录（含14:50价），
+        # 若此处沿用"幂等跳过"条件，幂等命中时会丢失 t0_daily 更新（历史教训：8-07 14:50价缺失）
         if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
         run: |
           node workflow_logger.cjs --record "上传数据" "running"

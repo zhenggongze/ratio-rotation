@@ -3,20 +3,21 @@
 // - 50万固定做T仓位，当日了结，次日恢复50万，盈亏累计不滚入
 // - 佣金万0.5双边（2026-08-07 起，原万1）
 // - 低开>2%当日跳过
-// - 仅买入未卖出 → 当日 14:57 卖出（卖出等量底仓）
+// - 仅买入未卖出 → 当日 14:50 卖出（卖出等量底仓）
 // - 委托价 = 开盘价 x 系数 向下取整到 3 位小数（实盘最小变动价位 0.001；
 //   向下取整挂单更低一档：买入过滤虚假触发、卖出更易成交，回测验证 4 组配对全胜）
 // ============================================================
 // 策略版本 v2（2026-08-06 生效）：
 // - 阈值从 0.4%/0.4% 调整为 买入0.3%（×0.997）/ 卖出0.8%（×1.008）
 //   依据：385天真实1分钟数据回测，宽卖出阈值下真实双边占比 89.2%（0.4/0.4 仅 63.2%），
-//   假双边从36.8%降到10.8%，做T净利 +16.07万（超额+32.14%，14:57了结口径）
+//   假双边从36.8%降到10.8%，做T净利 +16.07万（超额+32.14%，14:50了结口径）
 // - 历史业绩仅计算有分钟数据的日期（2025-01-02 ~ 2026-08-05，385天），分钟级真实成交，无折算模型
 // ============================================================
-// 恢复卖出价（2026-08-06 更新）：
-// - 买入后未触发卖出 → 以当日 14:57 价格卖出（用户指定），不再用收盘价
-//   （分钟级回测取 14:57 那根K线 close；每日记录取当日分时 14:57 价格；缺失时回退收盘价）
-// - 状态名：仅买收盘恢复 → 仅买14:57卖出，sell_time 固定为 14:57
+// 恢复卖出价（2026-08-11 更新，14:57 → 14:50）：
+// - 买入后未触发卖出 → 以当日 14:50 价格卖出
+//   （14:57 进入收盘集合竞价不可撤单，实盘无法操作；14:50 为连续竞价可自由挂单/撤单）
+//   （分钟级回测取 14:50 那根K线 close；每日记录取当日分时 14:50 价格；缺失时回退收盘价）
+// - 状态名：仅买收盘恢复 → 仅买14:50卖出，sell_time 固定为 14:50
 // ============================================================
 const fs = require('fs');
 const path = require('path');
@@ -302,8 +303,8 @@ function computeT0Signal(openPrice, prevClose) {
 // ============================================================
 // 计算单日做T记录（【每日记录】模块用，成交/盈亏口径与回测完全一致）
 // 输入: { date, open, prevClose, high, low, close, recoverPrice }
-//   recoverPrice: 当日 14:57 恢复卖出价（收盘后从分时取，仅买未卖出时用；缺失回退 close）
-// 状态: 跳过 / 待收盘(北京时间15:30前) / 未触发 / 双边成交 / 仅买14:57卖出
+//   recoverPrice: 当日 14:50 恢复卖出价（收盘后从分时取，仅买未卖出时用；缺失回退 close）
+// 状态: 跳过 / 待收盘(北京时间15:30前) / 未触发 / 双边成交 / 仅买14:50卖出
 // ============================================================
 function computeT0Daily({ date, open, prevClose, high, low, close, recoverPrice }) {
   const base = {
@@ -352,7 +353,7 @@ function computeT0Daily({ date, open, prevClose, high, low, close, recoverPrice 
     trades = 2;
     gross = (base.sell_p - base.buy_p) * shares;
   } else {
-    // 仅买未卖出 → 以当日 14:57 价格卖出（用户指定），缺失时回退收盘价
+    // 仅买未卖出 → 以当日 14:50 价格卖出，缺失时回退收盘价
     const rp = (recoverPrice && recoverPrice > 0) ? recoverPrice : close;
     commission += rp * shares * T0_CONFIG.COMMISSION_RATE;
     trades = 2;
@@ -361,7 +362,7 @@ function computeT0Daily({ date, open, prevClose, high, low, close, recoverPrice 
   const net = Math.round((gross - commission) * 100) / 100;
   const netPct = Math.round(net / T0_CONFIG.CAPITAL * 10000) / 100;
   return {
-    ...base, status: sellFilled ? '双边成交' : '仅买14:57卖出',
+    ...base, status: sellFilled ? '双边成交' : '仅买14:50卖出',
     buy_filled: buyFilled, sell_filled: sellFilled,
     gross: Math.round(gross * 100) / 100,
     commission: Math.round(commission * 100) / 100,
@@ -370,7 +371,7 @@ function computeT0Daily({ date, open, prevClose, high, low, close, recoverPrice 
     hold_pct: holdPct,
     net_pct: netPct,
     excess_pct: Math.round((netPct - holdPct) * 100) / 100,
-    buy_time: null, sell_time: sellFilled ? null : '14:57'
+    buy_time: null, sell_time: sellFilled ? null : '14:50'
   };
 }
 
@@ -382,7 +383,7 @@ function computeT0Daily({ date, open, prevClose, high, low, close, recoverPrice 
 //   buyP = 开盘×BUY_K，sellP = 开盘×SELL_K
 //   触发买入 = 某分钟 lowOf(b) <= buyP（分时数据无 low 时用 price）
 //   触发卖出 = 买入之后某分钟 highOf(b) >= sellP（无 high 时用 price）
-//   买入未卖出 → 以当日 14:57 分钟价卖出（缺失回退收盘价）
+//   买入未卖出 → 以当日 14:50 分钟价卖出（缺失回退收盘价）
 // 返回：单日记录（字段与回测 daily 一致，另含 gap_pct/shares/reason）
 // ============================================================
 function computeMinuteDaily(day, bars, prevClose) {
@@ -397,9 +398,9 @@ function computeMinuteDaily(day, bars, prevClose) {
   const lowOf = b => b.low != null ? b.low : b.price;
   const highOf = b => b.high != null ? b.high : b.price;
   const hhmm = dt => { const s = String(dt); return s.slice(8, 10) + ':' + s.slice(10, 12); };
-  // 恢复卖出价 = 当日 14:57 分钟价（用户指定，仅买未卖出时用；缺失回退收盘价）
-  const p1457 = sorted.find(b => String(b.date).slice(8, 12) === '1457' || b.time === '14:57');
-  const recoverPrice = p1457 ? (p1457.close != null ? p1457.close : p1457.price) : close;
+  // 恢复卖出价 = 当日 14:50 分钟价（仅买未卖出时用；缺失回退收盘价）
+  const p1450 = sorted.find(b => String(b.date).slice(8, 12) === '1450' || b.time === '14:50');
+  const recoverPrice = p1450 ? (p1450.close != null ? p1450.close : p1450.price) : close;
 
   const base = {
     date: day,
@@ -431,6 +432,9 @@ function computeMinuteDaily(day, bars, prevClose) {
   let sellBar = null;
   for (const b of sorted) {
     if (b.date <= buyBar.date) continue;
+    // 14:50 了结纪律：卖出触发仅限 14:50 前（含 14:50 那根），
+    // 14:57 起进入收盘集合竞价不可撤单，实盘无法操作
+    if (String(b.date).slice(8, 12) > '1450') break;
     if (highOf(b) >= sellP) { sellBar = b; break; }
   }
 
@@ -443,7 +447,7 @@ function computeMinuteDaily(day, bars, prevClose) {
     commission += sellP * shares * T0_CONFIG.COMMISSION_RATE;
     gross = (sellP - buyP) * shares;
   } else {
-    status = '仅买14:57卖出'; sellFilled = false; sellTime = '14:57';
+    status = '仅买14:50卖出'; sellFilled = false; sellTime = '14:50';
     trades = 2;
     commission += recoverPrice * shares * T0_CONFIG.COMMISSION_RATE;
     gross = (recoverPrice - buyP) * shares;
@@ -454,7 +458,7 @@ function computeMinuteDaily(day, bars, prevClose) {
     ...base, status,
     buy_filled: true, sell_filled: sellFilled,
     buy_time: buyTime, sell_time: sellTime,
-    recover_price: Math.round(recoverPrice * 1000) / 1000,   // 当日14:57时点价格（仅买未卖出时的实际恢复卖出价；双边成交日为参考价）
+    recover_price: Math.round(recoverPrice * 1000) / 1000,   // 当日14:50时点价格（仅买未卖出时的实际恢复卖出价；双边成交日为参考价）
     gross: Math.round(gross * 100) / 100,
     commission: Math.round(commission * 100) / 100,
     trades,
@@ -469,7 +473,7 @@ function computeMinuteDaily(day, bars, prevClose) {
 // 分钟级真实回测（v2 主口径）
 // 只用有分钟数据的日期（2025-01-02 ~ 2026-08-05，385 天），按分钟序列模拟真实成交：
 //   - 买入：第一根 low<=买价 的分钟 → 记买入时间（HH:MM）
-//   - 卖出：买入后第一根 high>=卖价 的分钟 → 记卖出时间；否则当日 14:57 卖出（卖出时间=14:57）
+//   - 卖出：买入后第一根 high>=卖价 的分钟 → 记卖出时间；否则当日 14:50 卖出（卖出时间=14:50）
 //   - 不做任何折算估算：分钟数据 = 真实成交结果
 // ============================================================
 function buildMinuteBacktest() {
@@ -504,7 +508,7 @@ function buildMinuteBacktest() {
     if (status === '跳过') skipDays++;
     else if (status !== '未触发') trigDays++;
     if (status === '双边成交') { bothDays++; bothNet += net; }
-    if (status === '仅买14:57卖出') { buyOnlyDays++; buyOnlyNet += net; }
+    if (status === '仅买14:50卖出') { buyOnlyDays++; buyOnlyNet += net; }
     totalNet += net; totalGross += gross; totalComm += commission; totalTrades += trades;
     if (net < worstDay) worstDay = net;
     if (net > bestDay) bestDay = net;
@@ -519,7 +523,7 @@ function buildMinuteBacktest() {
     const ya = yearlyAgg[y];
     ya.net += net; ya.gross += gross; ya.comm += commission; ya.trades += trades;
     if (status === '双边成交') { ya.bothNet += net; ya.bothDays++; }
-    if (status === '仅买14:57卖出') { ya.buyOnlyNet += net; ya.buyOnlyDays++; }
+    if (status === '仅买14:50卖出') { ya.buyOnlyNet += net; ya.buyOnlyDays++; }
     ya.lastClose = rawClose;
     prevClose = rawClose;
   }
