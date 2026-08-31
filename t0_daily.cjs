@@ -156,15 +156,41 @@ async function main() {
       recoverPrice: null
     });
   } else {
-    // 收盘后：拉当日 1 分钟K线（OHLC），分钟级真实判定（与历史回测完全同口径：low/high 判定）
-    let m1;
+    // 收盘后：先检查 mom10 信号（昨日动量>3% → 今日全仓持有，不做T）
+    let momSignal = null;
     try {
-      m1 = await fetchM1();
-    } catch (e) {
-      console.log(`✗ 1分钟K线获取失败（分钟级判定必需，拒绝降级为日线猜测）: ${e.message}`);
-      process.exit(1);
+      const mf = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
+      if (fs.existsSync(mf)) momSignal = JSON.parse(fs.readFileSync(mf, 'utf-8'));
+    } catch (e) { /* mom10 信号缺失时按做T处理 */ }
+    if (momSignal && momSignal.signal && momSignal.signal.mode === '全仓') {
+      const holdPct = quote.prev_close > 0 ? Math.round((quote.price / quote.prev_close - 1) * 10000) / 100 : 0;
+      const gapPct = quote.prev_close > 0 ? Math.round((quote.open / quote.prev_close - 1) * 10000) / 100 : 0;
+      record = {
+        date: today,
+        prev_close: Math.round(quote.prev_close * 1000) / 1000,
+        open: Math.round(quote.open * 1000) / 1000,
+        close: Math.round(quote.price * 1000) / 1000,
+        buy_p: null, sell_p: null, shares: null,
+        gap_pct: gapPct,
+        status: '全仓', reason: 'mom10触发',
+        mom10: (momSignal.signal.mom10 != null) ? Math.round(momSignal.signal.mom10 * 10000) / 10000 : null,
+        buy_filled: null, sell_filled: null,
+        buy_time: null, sell_time: null, recover_price: null,
+        gross: 0, commission: 0, trades: 0, net: 0,
+        hold_pct: holdPct, net_pct: 0, excess_pct: 0
+      };
+      console.log(`  mom10 触发：今日全仓持有（不做T），涨跌 ${holdPct}%`);
+    } else {
+      // 收盘后：拉当日 1 分钟K线（OHLC），分钟级真实判定（与历史回测完全同口径：low/high 判定）
+      let m1;
+      try {
+        m1 = await fetchM1();
+      } catch (e) {
+        console.log(`✗ 1分钟K线获取失败（分钟级判定必需，拒绝降级为日线猜测）: ${e.message}`);
+        process.exit(1);
+      }
+      record = buildMinuteRecord(today, m1, quote.prev_close);
     }
-    record = buildMinuteRecord(today, m1, quote.prev_close);
   }
 
   // 按 date 幂等覆盖

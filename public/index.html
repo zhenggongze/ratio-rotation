@@ -148,6 +148,47 @@
       word-break: break-word;
       line-height: 1.45;
     }
+    /* 历史业绩核心3卡（大号醒目：策略累计净利 / 累计超额 / 年化超额） */
+    .t0-core-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    /* 历史业绩三行分组：当前策略 / 对比满仓 / 对比做T */
+    .t0-row-group { margin-bottom: 4px; }
+    .t0-row-title {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 600;
+      margin: 6px 0 8px;
+      padding-left: 8px;
+      border-left: 3px solid var(--blue);
+    }
+    .t0-row-group .t0-core-grid { margin-bottom: 8px; }
+    .t0-core-grid .metric-card {
+      padding: 20px 14px;
+      background: linear-gradient(180deg, #fbfdff, #f1f6fb);
+      border: 1px solid rgba(52, 152, 219, 0.22);
+      border-top: 3px solid var(--blue);
+    }
+    .t0-core-grid .metric-card .value {
+      font-size: 30px;
+      line-height: 1.25;
+    }
+    .t0-core-grid .metric-card .label { font-size: 13px; }
+    @media (max-width: 767px) {
+      .t0-core-grid { gap: 8px; }
+      .t0-core-grid .metric-card { padding: 12px 6px; }
+      .t0-core-grid .metric-card .value { font-size: 18px; }
+      .t0-core-grid .metric-card .label { font-size: 11px; }
+      .t0-core-grid .metric-card .sub {
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
 
     /* ===== 区块 ===== */
     .section {
@@ -536,7 +577,11 @@
     /* ===== 红利做T页签样式 ===== */
     .t0-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
     .t0-badge.status-ready { background: rgba(231, 76, 60, 0.1); color: var(--pos); border: 1px solid rgba(231, 76, 60, 0.3); }
+    .t0-badge.status-full { background: rgba(155, 89, 182, 0.12); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.35); }
     .t0-badge.status-skip { background: rgba(149, 165, 166, 0.12); color: var(--text-light); border: 1px solid var(--border); }
+    /* 信号卡极简：状态徽标 + 买入价/卖出价一行（无监控价模块化大框） */
+    .t0-signal-price { font-size: 14px; color: var(--text-light); line-height: 1.6; }
+    .t0-signal-price b { color: var(--text); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 0 2px; }
     .t0-prices { display: flex; align-items: center; justify-content: center; gap: 24px; margin: 12px 0; flex-wrap: wrap; }
     .t0-price-box { text-align: center; padding: 16px 28px; border-radius: var(--radius); background: #f8f9fb; border: 1px solid var(--border); min-width: 160px; }
     .t0-price-label { font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
@@ -834,7 +879,7 @@
           <summary>📐 每日记录数据口径说明：① 分钟级真实成交（点击展开）</summary>
           <div class="caliber-item" id="caliber-daily-1">
             <div class="c-title"><span class="c-tag idx-real">①</span>每日记录与历史业绩同一判定口径</div>
-            <div>收盘后（15:30 后）用当日 1 分钟K线（开盘/最高/最低/收盘）判定真实买卖成交：<b>买入</b>=某分钟最低价跌到买价（开盘×0.997）；<b>卖出</b>=买入后某分钟最高价涨到卖价（开盘×1.008）；没卖到就 14:50 卖出（收盘集合竞价不可撤单，故实盘以 14:50 了结）。买卖时间精确到分钟，无任何日线猜测。</div>
+            <div>收盘后（15:30 后）用当日 1 分钟K线（开盘/最高/最低/收盘）判定真实买卖成交：<b>买入</b>=某分钟最低价跌到买价（开盘×0.997）；<b>卖出</b>=买入后某分钟最高价涨到卖价（开盘×1.008）；没卖到就 14:50 卖出（收盘集合竞价不可撤单，故实盘以 14:50 了结）。买卖时间精确到分钟，无任何日线猜测。<b>mom10 触发日（昨日动量&gt;3%）不挂单、满仓持有，记录为"全仓"，当日净利=当天涨跌。</b></div>
           </div>
         </details>
       </div>
@@ -845,7 +890,18 @@
           <span class="section-title-text">历史业绩</span>
           <span class="section-subtitle" id="t0BacktestRange"></span>
         </div>
-        <div class="metrics-grid" id="t0MetricsGrid"></div>
+        <div class="t0-row-group">
+          <div class="t0-row-title">当前策略 · mom10动态（累计情况）</div>
+          <div class="t0-core-grid" id="t0CoreGrid"></div>
+        </div>
+        <div class="t0-row-group">
+          <div class="t0-row-title">对比 · 一直满仓持有</div>
+          <div class="t0-core-grid" id="t0GridHold"></div>
+        </div>
+        <div class="t0-row-group">
+          <div class="t0-row-title">对比 · 一直半仓做T</div>
+          <div class="t0-core-grid" id="t0GridT0"></div>
+        </div>
 
         <!-- 每日状态分布（全部选项，加总=100%） -->
         <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：双边/仅买/未触发均为真实结果">①</sup></div>
@@ -1910,7 +1966,7 @@
     function renderT0(t0) {
       if (!t0) return;
       // 渲染历史业绩数据口径说明面板（角标 ①② 的详细解释与公式）
-      renderCaliberPanel();
+      renderCaliberPanel(t0.backtest);
       const bt = t0.backtest;
       const sig = t0.signal;
 
@@ -1919,28 +1975,15 @@
       if (sig && sig.signal) {
         sigDate.textContent = sig.date + ' ' + (sig.phase || '');
         const s = sig.signal;
-        const statusCls = s.skip ? 'status-skip' : 'status-ready';
-        const statusText = s.skip ? '今日跳过（低开超2%）' : '今日可做T';
-        const buyK = (bt && bt.param && bt.param.buy_k) || 0.997;
-        const sellK = (bt && bt.param && bt.param.sell_k) || 1.008;
-        let html = `
-          <div class="t0-badge ${statusCls}">${statusText}</div>
-          <div class="t0-prices">
-            <div class="t0-price-box">
-              <div class="t0-price-label">买入监控价</div>
-              <div class="t0-price-value buy">${s.buy_p.toFixed(3)}</div>
-              <div class="t0-price-sub">开盘 × ${buyK}</div>
-            </div>
-            <div class="t0-arrow">→</div>
-            <div class="t0-price-box">
-              <div class="t0-price-label">卖出监控价</div>
-              <div class="t0-price-value sell">${s.sell_p.toFixed(3)}</div>
-              <div class="t0-price-sub">开盘 × ${sellK}</div>
-            </div>
-          </div>
-          <div class="t0-info">昨收 ${s.prev_close.toFixed(3)} | 今开 ${s.open.toFixed(3)}（${s.gap_pct >= 0 ? '+' : ''}${s.gap_pct}%）</div>
-        `;
-        document.getElementById('t0SignalCard').innerHTML = html;
+        // mom10 动态模式（昨日动量 → 今日执行）
+        const mom = t0.mom10_signal && t0.mom10_signal.signal;
+        const isFullMode = !s.skip && mom && mom.mode === '全仓';
+        // 信号卡极简：仅 状态徽标 + 买入价/卖出价 一行（不做模块化展示，其余全部省略）
+        const statusCls = s.skip ? 'status-skip' : (isFullMode ? 'status-full' : 'status-ready');
+        const statusText = s.skip ? '今日跳过' : (isFullMode ? '今日全仓' : '今日做T');
+        const hasPrice = !s.skip && !isFullMode && s.buy_p != null && s.sell_p != null;
+        const priceHtml = `<div class="t0-signal-price">买入价 <b>${hasPrice ? s.buy_p.toFixed(3) : '—'}</b> ｜ 卖出价 <b>${hasPrice ? s.sell_p.toFixed(3) : '—'}</b></div>`;
+        document.getElementById('t0SignalCard').innerHTML = `<div class="t0-badge ${statusCls}">${statusText}</div>` + priceHtml;
       } else {
         sigDate.textContent = '暂无今日信号';
         document.getElementById('t0SignalCard').innerHTML = '<div class="t0-badge status-skip">今日信号未生成（每日9:25后自动更新）</div>';
@@ -1949,99 +1992,115 @@
       // ===== 历史业绩 =====
       if (bt) {
         const s = bt.summary;
-        document.getElementById('t0BacktestRange').textContent = `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（分钟级真实成交）`;
+        document.getElementById('t0BacktestRange').textContent = `回测 ${s.start_date.slice(0,4)}-${s.start_date.slice(4,6)}-${s.start_date.slice(6,8)} ~ ${s.end_date.slice(0,4)}-${s.end_date.slice(4,6)}-${s.end_date.slice(6,8)} · ${s.trading_days} 个交易日（mom10 动态：做T日半仓做T / 全仓日满仓持有）`;
         const cap = (bt.param && bt.param.capital) || 500000;
         // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
         const totalCap = cap * 2;
-        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
-        // v2 口径：分钟级真实成交（basis='minute_real'），不做任何折算估算
-        const t0Net = s.hold_profit + s.net_profit;
-        const excessAmt = s.net_profit;
-        const t0Sub = '底仓持有+做T差价 ÷ 100万总资金';
+        const pctSigned = v => (v >= 0 ? '+' : '') + (v / totalCap * 100).toFixed(1) + '%';   // 带正负号百分比（一位小数）
+        // mom10 动态口径：做T日半仓做T（底仓50万+做T50万），全仓日满仓持有（100万）
+        const t0Net = s.hold_profit + s.net_profit;          // mom10 动态累计净利
+        const excessAmt = s.net_profit;                       // 做T差价净利
+        const momVsT0 = (s.pure_t0_net != null) ? s.mom_net - s.pure_t0_net : null;   // 相对纯做T的超额
         const cal = 1;
-        const items = [
-          // cal: ①真实（角标点击滚动到下方说明面板）
-          { label: '做T累计净利(扣手续费)', value: pct(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: t0Sub, cal: cal },
-          { label: '底仓贡献(一直拿着)', value: pct(s.hold_profit), cls: s.hold_profit >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
-          { label: '做T差价收益', value: pct(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: cal }
-        ];
-        // 年化超额收益率 = 累计超额收益率 ÷ 回测区间年数（窗口内）
+        // 年化超额（相对纯做T）= mom10动态超额 ÷ 回测区间年数（窗口内）
         let annualExcess = null, yearsUsed = null;
         try {
           const t0m = new Date(s.start_date.slice(0,4) + '-' + s.start_date.slice(4,6) + '-' + s.start_date.slice(6,8)).getTime();
           const t1m = new Date(s.end_date.slice(0,4) + '-' + s.end_date.slice(4,6) + '-' + s.end_date.slice(6,8)).getTime();
           if (t1m > t0m) {
             yearsUsed = (t1m - t0m) / (365.25 * 24 * 3600 * 1000);
-            annualExcess = excessAmt / totalCap * 100 / yearsUsed;
+            annualExcess = (momVsT0 != null) ? momVsT0 / totalCap * 100 / yearsUsed : null;
           }
         } catch (e) { /* 日期解析失败则不显示 */ }
-        if (annualExcess !== null) {
-          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
-          // 做T累计净利(扣手续费)的年化收益 = 做T累计净利 ÷ 回测区间年数（持有+做T差价合计的年化口径）
-          const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
-          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: cal });
-        }
-        // 口径提示条已移除：与说明面板①内容重复（历史业绩仅统计有分钟数据的交易日，无折算假设）
-        document.getElementById('t0MetricsGrid').innerHTML = items.map(it => `
+        // 年化指标（相对满仓 / 相对做T / 策略自身）
+        const momVsHold = (s.pure_hold_net != null) ? s.mom_net - s.pure_hold_net : null;   // 相对纯满仓的超额
+        const annualNet = yearsUsed ? t0Net / totalCap * 100 / yearsUsed : null;             // 策略累计净利年化
+        const annualHold = (momVsHold != null && yearsUsed) ? momVsHold / totalCap * 100 / yearsUsed : null;  // 年化超额·相对满仓
+        // 卡模板
+        const cardHtml = it => `
           <div class="metric-card">
             ${it.cal ? calBadgeCorner(it.cal) : ''}
             <div class="label">${it.label}</div>
             <div class="value ${it.cls}">${it.value}</div>
             <div class="sub">${it.sub}</div>
-          </div>
-        `).join('');
+          </div>`;
+        // 行1：当前策略累计情况（mom10动态）
+        const coreItems = [
+          { label: '策略累计净利', value: pctSigned(t0Net), cls: t0Net >= 0 ? 'positive' : 'negative', sub: '100万基准·扣费', cal: cal },
+          { label: '累计净利年化', value: annualNet != null ? (annualNet >= 0 ? '+' : '') + annualNet.toFixed(1) + '%/年' : '—', cls: annualNet != null && annualNet >= 0 ? 'positive' : 'negative', sub: yearsUsed ? yearsUsed.toFixed(1) + '年·年均' : '', cal: cal },
+          { label: '做T差价收益', value: pctSigned(excessAmt), cls: excessAmt >= 0 ? 'positive' : 'negative', sub: '做T差价·100万', cal: cal }
+        ];
+        document.getElementById('t0CoreGrid').innerHTML = coreItems.map(cardHtml).join('');
+        // 行2：对比 · 一直满仓持有
+        const holdItems = [
+          { label: '纯满仓累计', value: pctSigned(s.pure_hold_net), cls: s.pure_hold_net >= 0 ? 'positive' : 'negative', sub: '满仓持有·100万', cal: cal },
+          { label: '相对满仓超额', value: momVsHold != null ? pctSigned(momVsHold) : '—', cls: momVsHold != null && momVsHold >= 0 ? 'positive' : 'negative', sub: momVsHold != null ? 'mom10多赚·100万' : '', cal: cal },
+          { label: '相对满仓年化', value: annualHold != null ? (annualHold >= 0 ? '+' : '') + annualHold.toFixed(1) + '%/年' : '—', cls: annualHold != null && annualHold >= 0 ? 'positive' : 'negative', sub: annualHold != null ? yearsUsed.toFixed(1) + '年·年均多赚' : '', cal: cal }
+        ];
+        document.getElementById('t0GridHold').innerHTML = holdItems.map(cardHtml).join('');
+        // 行3：对比 · 一直半仓做T
+        const t0Items = [
+          { label: '纯做T累计', value: pctSigned(s.pure_t0_net), cls: s.pure_t0_net >= 0 ? 'positive' : 'negative', sub: '半仓做T·100万', cal: cal },
+          { label: '相对做T超额', value: momVsT0 != null ? pctSigned(momVsT0) : '—', cls: momVsT0 != null && momVsT0 >= 0 ? 'positive' : 'negative', sub: momVsT0 != null ? 'mom10多赚·100万' : '', cal: cal },
+          { label: '相对做T年化', value: annualExcess != null ? (annualExcess >= 0 ? '+' : '') + annualExcess.toFixed(1) + '%/年' : '—', cls: annualExcess != null && annualExcess >= 0 ? 'positive' : 'negative', sub: annualExcess != null ? yearsUsed.toFixed(1) + '年·年均多赚' : '', cal: cal }
+        ];
+        document.getElementById('t0GridT0').innerHTML = t0Items.map(cardHtml).join('');
 
-        // ===== 每日状态分布（加总=100%） =====
-        // v2 真实口径①：分钟级真实成交结果，无折算段
-        const untrig = s.trading_days - s.skip_days - s.trig_days;
-        // 各状态平均当日做T净利%（net_pct 均值，扣手续费；未触发/低开跳过无操作=0；100万总资金基准÷2）
-        const statAvg = stat => {
-          const arr = (bt.daily || []).filter(r => r.status === stat);
-          if (!arr.length) return null;
-          const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2;
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+        // ===== 历史状态分布（与每日记录同款：全仓 / 双边成交 / 仅买14:50卖出 / 未触发买入） =====
+        const histDaily = bt.daily || [];
+        const hCount = st => histDaily.filter(r => r.status === st).length;
+        const hAvg = (rows, isFull) => {
+          if (!rows.length) return null;
+          const key = isFull ? 'hold_pct' : 'net_pct';
+          const sum = rows.reduce((a, r) => a + (typeof r[key] === 'number' ? r[key] : 0), 0);
+          const val = sum / rows.length / (isFull ? 1 : 2); // 做T日÷2：100万总资金基准
+          return (val >= 0 ? '+' : '') + val.toFixed(1) + '%';
         };
-        // 仅买14:50卖出：正收益天数占比（做T净利>0 的天数 / 总天数）
-        const buyOnlyRows = (bt.daily || []).filter(r => r.status === '仅买14:50卖出');
-        const buyOnlyPosPct = buyOnlyRows.length
-          ? Math.round(buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100)
-          : null;
-        document.getElementById('t0StatusDist').innerHTML = buildT0StatusHTML([
-          { label: '双边成交', count: s.both_days, color: 'var(--pos)', avg: statAvg('双边成交') },
-          { label: '仅买14:50卖出', count: s.buy_only_days, color: '#e67e22', avg: statAvg('仅买14:50卖出'), posPct: buyOnlyPosPct },
-          { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
-          { label: '低开跳过', count: s.skip_days, color: '#7f8c8d', avg: statAvg('跳过') }
-        ]);
+        const hItems = [
+          { label: '全仓日(mom10)', count: hCount('全仓'), color: '#9b59b6', avg: hAvg(histDaily.filter(r => r.status === '全仓'), true) },
+          { label: '双边成交', count: hCount('双边成交'), color: 'var(--pos)', avg: hAvg(histDaily.filter(r => r.status === '双边成交')) },
+          { label: '仅买14:50卖出', count: hCount('仅买14:50卖出'), color: '#e67e22', avg: hAvg(histDaily.filter(r => r.status === '仅买14:50卖出')) },
+          { label: '未触发买入', count: hCount('未触发买入'), color: '#95a5a6', avg: hAvg(histDaily.filter(r => r.status === '未触发买入')) }
+        ];
+        // 兜底：极少数无状态的历史做T日
+        const hOther = histDaily.length - hItems.reduce((a, i) => a + i.count, 0);
+        if (hOther > 0) hItems.push({ label: '做T(历史无状态)', count: hOther, color: '#7f8c8d', avg: null });
+        document.getElementById('t0StatusDist').innerHTML = buildT0StatusHTML(hItems);
 
-        // ===== 逐年收益表（分钟级真实口径①） =====
-        // 全部用百分比（相对100万总资金基准：底仓50万+做T现金50万），不显示金额，避免与个人总持仓金额混淆
+        // ===== 逐年收益表（mom10 动态三策略对比，2020 起） =====
+        // 全部用百分比（相对100万总资金基准），不显示金额，避免与个人总持仓金额混淆
         const yrHead = `
           <thead><tr>
             <th>年份</th>
-            <th>底仓贡献率①</th>
-            <th>做T差价净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：该年做T差价净利 ÷ 100万总资金基准">①</sup></th>
-            <th>做T累计净利率<sup class="t0-badge-idx idx-real" data-cal="1" title="= 底仓贡献率 + 做T差价净利率（相对100万总资金基准）">①</sup></th>
+            <th>全仓天数</th>
+            <th>做T天数</th>
+            <th>纯做T<sup class="t0-badge-idx idx-real" data-cal="1" title="一直半仓做T，该年收益 ÷ 100万总资金基准">①</sup></th>
+            <th>纯满仓<sup class="t0-badge-idx idx-real" data-cal="1" title="一直全仓持有，该年收益 ÷ 100万总资金基准">①</sup></th>
+            <th>mom10动态<sup class="t0-badge-idx idx-real" data-cal="1" title="做T日半仓做T / 全仓日满仓持有，该年收益 ÷ 100万总资金基准">①</sup></th>
           </tr></thead>`;
         const yrBody = (bt.yearly || []).map(y => {
-          const t0d = typeof y.net_d === 'number' ? y.net_d : y.net;   // 做T差价净利
-          const cum = y.hold_ret + t0d;                                 // 做T累计净利
-          const pct = v => (v / totalCap * 100).toFixed(2) + '%';
+          const pct = v => (v / totalCap * 100).toFixed(1) + '%';
           return `<tr>
             <td>${y.year}</td>
-            <td class="${y.hold_ret >= 0 ? 'pos' : 'neg'}">${pct(y.hold_ret)}</td>
-            <td class="${t0d >= 0 ? 'pos' : 'neg'}">${pct(t0d)}</td>
-            <td class="${cum >= 0 ? 'pos' : 'neg'}">${pct(cum)}</td>
+            <td>${y.full_days}</td>
+            <td>${y.t0_days}</td>
+            <td class="${y.pure_t0_net >= 0 ? 'pos' : 'neg'}">${pct(y.pure_t0_net)}</td>
+            <td class="${y.pure_hold_net >= 0 ? 'pos' : 'neg'}">${pct(y.pure_hold_net)}</td>
+            <td class="${y.mom_net >= 0 ? 'pos' : 'neg'}">${pct(y.mom_net)}</td>
           </tr>`;
         }).join('');
         document.getElementById('t0YearlyTable').innerHTML = yrHead + '<tbody>' + yrBody + '</tbody>';
         // 逐年收益口径说明
         const yrNote = document.getElementById('t0YearlyNote');
-        if (yrNote) yrNote.innerHTML = `逐年收益为分钟级真实成交口径①（2025-2026 有分钟数据的年份），全部按100万总资金基准（底仓50万+做T现金50万）算百分比，与你的总金额无关。`;
+        if (yrNote) yrNote.innerHTML = `逐年收益为 mom10 动态口径（2020 起）：做T日按半仓做T、全仓日按满仓持有，全部按 100 万总资金基准算百分比，与你的总金额无关。mom10 = 收盘 ÷ 10 交易日前收盘 − 1，昨日 &gt; 3% → 今日满仓；数据来源：聚宽导出日线 + 做T净利（2020-2024）+ 生产分钟级做T记录（2025 起）。`;
 
         // ===== 参数与纪律 =====
         const p = bt.param;
         const buyPct = ((1 - p.buy_k) * 100).toFixed(1);
         const sellPct = ((p.sell_k - 1) * 100).toFixed(1);
+        const momRows = (p.mom_threshold != null)
+          ? `<tr><td>mom10阈值</td><td>${(p.mom_threshold * 100).toFixed(0)}%</td><td>昨日10日动量（收盘÷10交易日前收盘−1）&gt; ${(p.mom_threshold * 100).toFixed(0)}% 且上涨 → 今日满仓持有（不做T）；否则半仓做T。T日信号 T+1 生效</td></tr>`
+          : '';
         document.getElementById('t0Params').innerHTML = `
           <div class="table-wrap t0-params-wrap">
             <table class="t0-params-table">
@@ -2056,6 +2115,7 @@
                 <tr><td>跳过条件</td><td>低开超${p.skip_drop * 100}%</td><td>开盘 &lt; 昨收 × 0.98 当日不做T</td></tr>
                 <tr><td>执行方式</td><td>先买后卖</td><td>条件单选「限价委托」+价格类型「即时现价」=触发瞬间按最新价挂限价单（买成交≤监控价/卖成交≥监控价，匹配回测）；手动挂单则限价直接填监控价。正T保护不卖底仓</td></tr>
                 <tr><td>了结纪律</td><td>当日</td><td>仅买入未卖出 → 14:50 手动市价卖出等量（收盘集合竞价不可撤单，须在 14:50 前完成），不过夜</td></tr>
+                ${momRows}
               </tbody>
             </table>
           </div>
@@ -2063,7 +2123,7 @@
           <div class="ratio-ruler-note"><strong>提示：</strong>做T赚的是日内震荡差价，单边牛市会跑输持有；v2 买-${buyPct}%/卖+${sellPct}%（1.1%价差）基于385天真实1分钟数据验证（真实双边占比89.2%，胜率58%），挂单价统一向下取整到0.001与实盘一致。实盘请先小仓位试跑2-4周。</div>
         `;
       } else {
-        document.getElementById('t0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
+        document.getElementById('t0CoreGrid').innerHTML = '<div class="t0-badge status-skip">回测数据未生成</div>';
       }
 
       // ===== 每日记录（自今日起，16:00 收盘后自动更新） =====
@@ -2141,7 +2201,7 @@
         const cap = (bt.param && bt.param.capital) || 500000;
         // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
         const totalCap = cap * 2;
-        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
+        const pct = v => (v / totalCap * 100).toFixed(1) + '%';
         const t0Net = s.hold_profit + s.net_profit;
         const excessAmt = s.net_profit;
         const items = [
@@ -2159,9 +2219,9 @@
           }
         } catch (e) { /* 忽略 */ }
         if (annualExcess !== null) {
-          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(1) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
           const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
-          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(1) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
         }
         document.getElementById('cybt0MetricsGrid').innerHTML = items.map(it => `
           <div class="metric-card">
@@ -2178,7 +2238,7 @@
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
           const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
         const buyOnlyPosPct = buyOnlyRows.length
@@ -2282,9 +2342,9 @@
 
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
-          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
-          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(1) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(1) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(1) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2301,7 +2361,7 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
@@ -2419,7 +2479,7 @@
         const cap = (bt.param && bt.param.capital) || 500000;
         // 收益率统一按 100 万总资金基准（底仓50万 + 做T现金50万）：原50万委托基准的值全部÷2
         const totalCap = cap * 2;
-        const pct = v => (v / totalCap * 100).toFixed(2) + '%';
+        const pct = v => (v / totalCap * 100).toFixed(1) + '%';
         const t0Net = s.hold_profit + s.net_profit;
         const excessAmt = s.net_profit;
         const items = [
@@ -2437,9 +2497,9 @@
           }
         } catch (e) { /* 忽略 */ }
         if (annualExcess !== null) {
-          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(2) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+          items.push({ label: '年化超额收益率', value: annualExcess.toFixed(1) + '%', cls: annualExcess >= 0 ? 'positive' : 'negative', sub: '累计超额 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
           const t0NetAnnual = t0Net / totalCap * 100 / yearsUsed;
-          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(2) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
+          items.push({ label: '做T累计净利年化', value: t0NetAnnual.toFixed(1) + '%', cls: t0NetAnnual >= 0 ? 'positive' : 'negative', sub: '做T累计净利 ÷ ' + yearsUsed.toFixed(1) + '年(窗口内)', cal: 1 });
         }
         document.getElementById('kcbt0MetricsGrid').innerHTML = items.map(it => `
           <div class="metric-card">
@@ -2456,7 +2516,7 @@
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
           const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
         const buyOnlyPosPct = buyOnlyRows.length
@@ -2560,9 +2620,9 @@
 
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
-          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
-          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
+          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(1) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
+          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(1) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(1) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2579,7 +2639,7 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
@@ -2644,24 +2704,26 @@
       return `<span class="t0-badge-idx ${c.cls} badge-corner" data-cal="${n}" title="${c.tip}">${c.ch}</span>`;
     }
     // 说明面板条目内容（① ②），简短白话版
-    function caliberDocs() {
+    function caliberDocs(bt) {
+      const s = bt && bt.summary;
+      const days = s ? s.trading_days : '—';
       return [
-        { id: 'caliber-1', tag: 1, title: '真实数据 —— 分钟级真实成交，页面主要数字都基于它', html: `
-          历史业绩只用<b>有分钟数据的交易日</b>（2025-01-02 ~ 2026-08-05，共 385 天，9.2 万条 1 分钟数据），按分钟序列判定真实买卖：<br>
-          <b>买入</b>=价格跌到买价（开盘×0.997）的那一分钟；<b>卖出</b>=买入后价格涨到卖价（开盘×1.008）的那一分钟；没卖到就 14:50 卖出。<br>
-          买卖时间精确到分钟，全部可复核。<br><br>
-          <b>核心数字</b>：做T累计净利 = 底仓贡献（一直拿着）+ 做T差价，均为真实成交结果：<div class="c-formula">做T累计净利 18.98% = 底仓贡献 2.91% + 做T差价 16.07%（相对100万总资金基准：底仓50万+做T现金50万）</div>
-          无任何折算、无估算。` },
-        { id: 'caliber-2', tag: 2, title: '验证依据 —— 策略参数与数据来源', html: `
-          数据源：<b>free-stockdb + baostock 双源交叉验证</b>的 515180 分钟数据，结果一致。<br>
-          v2 阈值（买0.3%/卖0.8%）来自 385 天分钟回测：真实双边占比 <b>89.2%</b>，做T净利 <b>+16.07万（超额 +16.07%）</b>，胜率 58%。<br>
-          仅买 212 天中 108 天盈利（14:50 价在买价上方），104 天亏损，净额约 −2.08万（日均 −98元），主要亏损集中在大跌日。` }
+        { id: 'caliber-1', tag: 1, title: 'mom10 动态 —— 做T日半仓做T / 全仓日满仓持有（2020 起）', html: `
+          历史业绩为 <b>mom10 动态策略</b>（2020-01-01 起，共 <b>${days} 个交易日</b>）：<br>
+          <b>做T日</b>（昨日 mom10 ≤ 3%）= 50万底仓 + 50万做T，按做T净利记录；<b>全仓日</b>（昨日 mom10 &gt; 3%）= 100万满仓持有，按当日涨跌记录。<br>
+          mom10 = 收盘 ÷ 10 交易日前收盘 − 1，仅上涨方向触发，T 日信号 T+1 生效。<br><br>
+          <b>核心数字</b>：策略累计净利 = 持有贡献（底仓/全仓）+ 做T差价，均为真实行情计算：<div class="c-formula">策略累计净利 = 持有贡献 + 做T差价（相对100万总资金基准）</div>
+          2020-2024 做T净利来自聚宽导出的分钟级真实做T结果，2025 起来自生产分钟级做T记录。` },
+        { id: 'caliber-2', tag: 2, title: '三策略对比 —— mom10 开关的价值', html: `
+          纯做T = 一直半仓做T（50万底仓 + 50万做T）；纯满仓 = 一直100万持有；mom10动态 = 做T日半仓做T、全仓日满仓持有。<br>
+          mom10 的收益主要来自<b>动量强时满仓吃趋势</b>（单边上涨段做T会跑输持有），阈值 3%、周期 10 日。<br>
+          数据源：聚宽导出日线（2019-12-20 起）+ 生产做T每日记录（2025 起）；做T佣金按万 0.5 双边。` }
       ];
     }
-    function renderCaliberPanel() {
+    function renderCaliberPanel(bt) {
       const el = document.getElementById('t0CaliberBody');
       if (!el) return;
-      el.innerHTML = caliberDocs().map(d => `
+      el.innerHTML = caliberDocs(bt).map(d => `
         <div class="caliber-item" id="${d.id}">
           <div class="c-title"><span class="c-tag ${CALIBER[d.tag].cls}">${CALIBER[d.tag].ch}</span>${d.title}</div>
           <div>${d.html}</div>
@@ -2695,16 +2757,21 @@
     function buildT0RowsHTML(records, showTime, showAdjust, adjCtx) {
       const ctx = adjCtx || { adjustments: t0Adjustments, saveFn: 'saveT0Adjust', recoverStatus: '仅买14:50卖出', stId: 't0AdjSt_' };
       return records.map(r => {
-        const statusCls = r.status === '双边成交' ? 'ok'
+        const isFull = r.status === '全仓';
+        const statusCls = isFull ? 'ok'
+          : r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || (r.status && String(r.status).indexOf('仅买') === 0)) ? 'warn' : 'gray';
-        const trade = r.buy_filled === null ? '待'
+        const trade = isFull ? '—'
+          : r.buy_filled === null ? '待'
           : (r.buy_filled ? '✓' : '—') + (r.sell_filled ? '✓' : '—');
-        const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(2) + '%';
-        // 当日净利(扣手续费) = 底仓持有收益 + 做T差价净利（策略当日实际收益，100万总资金基准÷2）
-        const dayNet = (r.hold_pct === null || r.hold_pct === undefined || r.net_pct === null || r.net_pct === undefined)
-          ? null : Math.round((r.hold_pct + r.net_pct) / 2 * 100) / 100;
-        // 当日超额 = 当日净利 - 当日持有收益 = 做T差价净利（100万总资金基准÷2）
-        const dayEx = (r.net_pct === null || r.net_pct === undefined) ? null : Math.round(r.net_pct / 2 * 100) / 100;
+        const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(1) + '%';
+        // 当日净利(扣手续费)：全仓日=当日持有收益（100万直接）；做T日=（底仓持有+做T差价）÷2（100万总资金基准）
+        const dayNet = isFull
+          ? (r.hold_pct === null || r.hold_pct === undefined) ? null : Math.round(r.hold_pct * 100) / 100
+          : (r.hold_pct === null || r.hold_pct === undefined || r.net_pct === null || r.net_pct === undefined)
+            ? null : Math.round((r.hold_pct + r.net_pct) / 2 * 100) / 100;
+        // 当日超额：全仓日=0（无做T）；做T日=做T差价净利÷2
+        const dayEx = isFull ? 0 : (r.net_pct === null || r.net_pct === undefined) ? null : Math.round(r.net_pct / 2 * 100) / 100;
         // 0% 既非盈也非亏 → 灰色；正红负绿
         const netCls = dayNet === null ? 'gray' : (dayNet === 0 ? 'gray' : (dayNet > 0 ? 'pl' : 'mn'));
         const exCls = dayEx === null ? 'gray' : (dayEx === 0 ? 'gray' : (dayEx > 0 ? 'pl' : 'mn'));
@@ -2729,12 +2796,12 @@
         }
         return `<tr>
           <td>${fmtDate(r.date)}</td>
-          <td><span class="t0-status-tag ${statusCls}">${r.status}</span></td>
+          <td><span class="t0-status-tag ${statusCls}">${isFull && r.mom10 != null ? '全仓(mom10 ' + (r.mom10 * 100).toFixed(1) + '%)' : r.status}</span></td>
           ${timeCells}
           <td>${Number(r.open).toFixed(3)}</td>
           <td>${r.close ? Number(r.close).toFixed(3) : '—'}</td>
-          <td>${Number(r.buy_p).toFixed(3)}</td>
-          <td>${Number(r.sell_p).toFixed(3)}</td>
+          <td>${r.buy_p != null ? Number(r.buy_p).toFixed(3) : '—'}</td>
+          <td>${r.sell_p != null ? Number(r.sell_p).toFixed(3) : '—'}</td>
           <td>${rp1450}</td>
           ${adjustCell}
           <td>${trade}</td>
@@ -2808,18 +2875,19 @@
         meta.innerHTML = `${records[0].date}~${records[total - 1].date} ${timePart}，${total}个交易日 ${calBadge(1)}`;
       }
       const cnt = s => records.filter(r => r.status === s).length;
-      const both = cnt('双边成交'), recover = records.filter(r => String(r.status).indexOf('仅买') === 0).length, skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘');
-      const sumNetPct = records.filter(r => typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct, 0);
-      const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + r.hold_pct, 0);
-      // 收益率统一按100万总资金基准（底仓50万+做T现金50万）：原50万委托基准的百分比÷2
-      const t0NetPct = Math.round((sumHoldPct + sumNetPct) / 2 * 100) / 100;
+      const both = cnt('双边成交'), recover = records.filter(r => String(r.status).indexOf('仅买') === 0).length, skip = cnt('跳过'), untrig = cnt('未触发'), pend = cnt('待收盘'), full = cnt('全仓');
+      // 全仓日（mom10）：贡献=当日持有收益（100万直接）；做T日：底仓hold÷2 + 做T差价net÷2（100万总资金基准）
+      const sumNetPct = records.filter(r => r.status !== '全仓' && typeof r.net_pct === 'number').reduce((a, r) => a + r.net_pct / 2, 0);
+      const sumHoldPct = records.filter(r => typeof r.hold_pct === 'number').reduce((a, r) => a + (r.status === '全仓' ? r.hold_pct : r.hold_pct / 2), 0);
+      // 收益率统一按100万总资金基准（底仓50万+做T现金50万；全仓日100万直接）
+      const t0NetPct = Math.round((sumHoldPct + sumNetPct) * 100) / 100;
 
-      // 顶部统计卡（与历史业绩统一：3张百分比卡，均为分钟级真实口径）
+      // 顶部统计卡（与历史业绩统一：3张百分比卡，mom10 动态口径）
       if (cards) {
         const cardItems = [
-          { label: '做T累计净利(扣手续费)', value: t0NetPct.toFixed(2) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '底仓持有+做T差价 ÷ 100万总资金', cal: 1 },
-          { label: '底仓贡献(一直拿着)', value: (sumHoldPct / 2).toFixed(2) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓50万持有收益 ÷ 100万总资金', cal: 1 },
-          { label: '做T差价收益', value: (sumNetPct / 2).toFixed(2) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
+          { label: '策略累计净利(扣手续费)', value: t0NetPct.toFixed(1) + '%', cls: t0NetPct >= 0 ? 'positive' : 'negative', sub: '持有+做T差价 ÷ 100万总资金（mom10动态）', cal: 1 },
+          { label: '持有贡献(一直拿着)', value: sumHoldPct.toFixed(1) + '%', cls: sumHoldPct >= 0 ? 'positive' : 'negative', sub: '底仓/全仓持有收益 ÷ 100万总资金', cal: 1 },
+          { label: '做T差价收益', value: sumNetPct.toFixed(1) + '%', cls: sumNetPct >= 0 ? 'positive' : 'negative', sub: '做T差价净利 ÷ 100万总资金', cal: 1 }
         ];
         cards.innerHTML = cardItems.map(it => `
           <div class="metric-card">
@@ -2839,14 +2907,18 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
         };
         // 仅买（前缀匹配）：正收益天数占比（做T净利>0 的天数 / 总天数）
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
           ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
           : null;
+        // 全仓(mom10)：平均当日持有收益%
+        const dFullRows = records.filter(r => r.status === '全仓');
+        const dFullAvg = dFullRows.length ? dFullRows.reduce((a, r) => a + (typeof r.hold_pct === 'number' ? r.hold_pct : 0), 0) / dFullRows.length : null;
         statsEl.innerHTML = buildT0StatusHTML([
+          { label: '全仓(mom10)', count: full, color: '#9b59b6', avg: dFullAvg != null ? (dFullAvg >= 0 ? '+' : '') + dFullAvg.toFixed(1) + '%' : null },
           { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
           { label: '仅买14:50卖出', count: recover, color: '#e67e22', avg: statAvg('仅买14:50卖出'), posPct: dBuyOnlyPosPct },
           { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
@@ -2912,19 +2984,19 @@
 
       if (isT0) {
         document.getElementById('headerTitle').textContent = '红利做T（515180 日内高抛低吸）';
-        document.getElementById('headerDesc').textContent = '基于已有底仓做T+0：跌0.3%自动买入，买入成交后涨0.8%自动卖出，当日了结不过夜；低开超2%当日跳过';
+        document.getElementById('headerDesc').innerHTML = '做T+0：底仓跌0.3%自动买入、涨0.8%自动卖出，当日了结不过夜，低开超2%跳过<br>mom10动态：10日动量&gt;3%次日满仓持有不挂单，回落≤3%切回半仓做T，信号T+1生效';
         if (t0Data) {
           if (t0Data.backtest) {
             renderT0(t0Data);
           } else {
             // 按需加载做T回测数据（独立文件，首页不加载以提速）
             // 弱网/手机端 t0_backtest.json 下载需数秒，先给加载提示避免空白等待
-            document.getElementById('t0MetricsGrid').innerHTML = '<div class="t0-badge status-skip">回测数据加载中，请稍候…（弱网下约需数秒）</div>';
+            document.getElementById('t0CoreGrid').innerHTML = '<div class="t0-badge status-skip">回测数据加载中，请稍候…（弱网下约需数秒）</div>';
             ensureT0Backtest().then(bt => {
               t0Data.backtest = bt;
               renderT0(t0Data);
             }).catch(e => {
-              document.getElementById('t0MetricsGrid').innerHTML = '<div class="gray">做T回测数据加载失败：' + e.message + '</div>';
+              document.getElementById('t0CoreGrid').innerHTML = '<div class="gray">做T回测数据加载失败：' + e.message + '</div>';
             });
           }
         }

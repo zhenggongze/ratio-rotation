@@ -143,6 +143,23 @@ async function main() {
   }
 
   const text = formatSignalText(sig);
+
+  // 并入 mom10 动态模式（昨日动量 → 今日执行），全仓日提示不做T
+  try {
+    const mf = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
+    if (fs.existsSync(mf)) {
+      const ms = JSON.parse(fs.readFileSync(mf, 'utf-8')).signal;
+      if (ms) {
+        const momPct = ms.mom10_pct != null ? ms.mom10_pct.toFixed(2) + '%' : '—';
+        const momLine = ms.mode === '全仓'
+          ? `【mom10】昨日动量 ${momPct} 超3% → 今日满仓持有，不挂做T单`
+          : `【mom10】昨日动量 ${momPct} 未超3% → 今日半仓做T`;
+        // 全仓日把 mom10 行放最前提示，做T日追加在末尾
+        if (ms.mode === '全仓') console.log(`\nmom10 状态: ${momLine}`);
+      }
+    }
+  } catch (e) { /* mom10 信号缺失不阻塞做T推送 */ }
+
   console.log('\n' + text);
 
   // 保存信号文件
@@ -162,10 +179,24 @@ async function main() {
   fs.writeFileSync(SIGNAL_FILE, JSON.stringify(payload, null, 2), 'utf-8');
   console.log(`\n✓ 信号已保存: ${SIGNAL_FILE}`);
 
-  // 推送（复用 pusher.cjs：type=text + 3次重试，与轮动推送一致）
   if (doPush) {
+    // 推送时重新拼 mom10 行（避免控制台/推送不一致）
+    let pushText = text;
+    try {
+      const mf = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
+      if (fs.existsSync(mf)) {
+        const ms = JSON.parse(fs.readFileSync(mf, 'utf-8')).signal;
+        if (ms) {
+          const momPct = ms.mom10_pct != null ? ms.mom10_pct.toFixed(2) + '%' : '—';
+          const momLine = ms.mode === '全仓'
+            ? `【mom10】昨日动量 ${momPct} 超3% → 今日满仓持有，不挂做T单`
+            : `【mom10】昨日动量 ${momPct} 未超3% → 今日半仓做T`;
+          pushText = (ms.mode === '全仓' ? momLine + '\n' + text : text + '\n' + momLine);
+        }
+      }
+    } catch (e) { /* 忽略 */ }
     console.log('\n推送 PushDeer...');
-    const r = await sendPushWithRetry(text, '', 't0_signal');
+    const r = await sendPushWithRetry(pushText, '', 't0_signal');
     if (r.success) {
       console.log('  ✓ 推送成功');
     } else {

@@ -92,6 +92,11 @@ jobs:
         run: |
           node t0_cyb_daily.cjs
 
+      - name: 更新 mom10 动态策略数据（动量信号 + 三策略回测 + 每日记录全仓标记）
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
+        run: |
+          node t0_mom10.cjs
+
       - name: 运行每日任务（采集数据+信号判定+收益计算+推送）
         if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |

@@ -42,6 +42,10 @@ const DATA_FILES = [
   't0/t0_backtest.json',
   't0/t0_signal.json',
   't0/t0_daily.json',
+  // mom10 动态策略（2020 起：动量信号 + 三策略回测 + 日线）
+  't0/mom10_daily.json',
+  't0/mom10_signal.json',
+  't0/mom10_backtest.json',
   // 创业板(159915) 做T数据
   't0/159915_5min_merged.json',
   't0/cyb_backtest.json',

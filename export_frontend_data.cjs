@@ -215,9 +215,19 @@ function exportFrontendData() {
   const kcbDims = (kcbData.daily_records && kcbData.daily_records.length > 0)
     ? buildFrontendDims(kcbData, config.kcb) : null;
 
-  // 做T策略数据（515180 红利ETF 日内做T）
+  // 做T策略数据（515180 红利ETF：mom10 动态，2020 起）
   // 回测结果（静态预计算）+ 当日信号（动态）
-  const t0Backtest = loadBacktestJson();
+  // mom10 动态回测优先（含纯做T/纯满仓/mom10动态三策略对比）；缺失时回退分钟级回测
+  let t0Backtest = loadBacktestJson();
+  const mom10BtFile = path.join(config.dataDir, 't0', 'mom10_backtest.json');
+  if (fs.existsSync(mom10BtFile)) {
+    try {
+      t0Backtest = JSON.parse(fs.readFileSync(mom10BtFile, 'utf-8'));
+      console.log(`  ✓ 历史业绩使用 mom10 动态回测 (${t0Backtest.summary.start_date}~${t0Backtest.summary.end_date}, ${t0Backtest.summary.trading_days}天)`);
+    } catch (e) {
+      console.log(`  ⚠ 读取 mom10 回测失败，回退分钟级回测: ${e.message}`);
+    }
+  }
   let t0Signal = null;
   const t0SignalFile = path.join(config.dataDir, 't0', 't0_signal.json');
   if (fs.existsSync(t0SignalFile)) {
@@ -225,6 +235,16 @@ function exportFrontendData() {
       t0Signal = JSON.parse(fs.readFileSync(t0SignalFile, 'utf-8'));
     } catch (e) {
       console.log(`  ⚠ 读取做T信号失败: ${e.message}`);
+    }
+  }
+  // mom10 信号（昨日动量 → 今日执行模式）
+  let mom10Signal = null;
+  const mom10SigFile = path.join(config.dataDir, 't0', 'mom10_signal.json');
+  if (fs.existsSync(mom10SigFile)) {
+    try {
+      mom10Signal = JSON.parse(fs.readFileSync(mom10SigFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取 mom10 信号失败: ${e.message}`);
     }
   }
   let t0Daily = null;
@@ -238,7 +258,8 @@ function exportFrontendData() {
   }
   const t0Dims = {
     signal: t0Signal,           // { date, generated_at, phase, signal }
-    daily: t0Daily              // { updated_at, count, records: [...] }
+    daily: t0Daily,             // { updated_at, count, records: [...] }
+    mom10_signal: mom10Signal   // { date, signal: { mom10, trigger, mode } }
   };
 
   // 创业板(159915) 做T数据（观察期模块，结构与红利 t0 一致；回测独立文件 t0_backtest_cyb.json）
@@ -301,6 +322,7 @@ function exportFrontendData() {
       param: t0Backtest.param,
       daily: t0Backtest.daily.map(r => ({
         date: r.date, status: r.status, open: r.open, close: r.close,
+        mom10: r.mom10 != null ? r.mom10 : null,   // 该日10日动量（全仓行展示用）
         buy_p: r.buy_p, sell_p: r.sell_p,
         buy_filled: r.buy_filled, sell_filled: r.sell_filled,
         buy_time: r.buy_time || null, sell_time: r.sell_time || null,
