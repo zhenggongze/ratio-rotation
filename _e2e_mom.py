@@ -41,12 +41,12 @@ with sync_playwright() as p:
     check('每日记录18行', daily_rows == 18, str(daily_rows))
     # 8-28 全仓行
     d828_html = page.evaluate("() => { const r = Array.from(document.querySelectorAll('#t0DailyBody tr')).find(x => x.textContent.includes('2026-08-28')); return r ? r.textContent.replace(/\\s+/g,' ').trim() : '' }")
-    check('8-28 显示全仓', '全仓' in d828_html and '全仓' in d828_html.split('2026-08-28')[1][:30], d828_html[:150])
+    check('8-28 显示未触发(5%口径)', '未触发' in d828_html and '全仓' not in d828_html.split('2026-08-28')[1][:30], d828_html[:150])
     check('8-28 无做T时间', '09:50' not in d828_html.split('2026-08-28')[1][:40], d828_html[:150])
-    check('8-28 全仓含mom10值', 'mom10 3.8%' in d828_html, d828_html[:150])
-    # 历史明细全仓行也含 mom10
+    check('8-28 未触发无mom10', 'mom10 3.8%' not in d828_html, d828_html[:150])
+    # 历史明细 8-28 为未触发买入（5%口径）
     hf828 = page.evaluate("() => { const r = Array.from(document.querySelectorAll('#t0HistoryDailyBody tr')).find(x => x.textContent.includes('2026-08-28')); return r ? r.textContent.replace(/\\s+/g,' ').trim() : '' }")
-    check('历史明细全仓含mom10', 'mom10' in hf828 and '3.8%' in hf828, hf828[:150])
+    check('历史明细8-28未触发买入', '未触发买入' in hf828 and '全仓' not in hf828, hf828[:150])
     # 每日记录统计卡
     cards = page.locator('#t0DailyCards .metric-card .label').all_inner_texts()
     check('每日记录卡3张', len(cards) == 3, str(cards))
@@ -60,16 +60,16 @@ with sync_playwright() as p:
     core_cards = page.locator('#t0CoreGrid .metric-card').count()
     check('行1卡3张', core_cards == 3, str(core_cards))
     core_txt = page.locator('#t0CoreGrid').inner_text()
-    check('行1含策略累计净利%', '策略累计净利' in core_txt and '77.5%' in core_txt and '77.08万' not in core_txt, core_txt[:300])
+    check('行1含策略累计净利%', '策略累计净利' in core_txt and '77.2%' in core_txt and '77.08万' not in core_txt, core_txt[:300])
     check('行1含年化/做T差价', '累计净利年化' in core_txt and '做T差价收益' in core_txt, core_txt[:300])
     hold_cards = page.locator('#t0GridHold .metric-card').count()
     check('行2卡3张', hold_cards == 3, str(hold_cards))
     hold_txt = page.locator('#t0GridHold').inner_text()
-    check('行2含纯满仓+相对满仓超额', '纯满仓累计' in hold_txt and '相对满仓' in hold_txt and '6.3%' in hold_txt, hold_txt[:300])
+    check('行2含纯满仓+相对满仓超额', '纯满仓累计' in hold_txt and '相对满仓' in hold_txt and '6.0%' in hold_txt, hold_txt[:300])
     t0g_cards = page.locator('#t0GridT0 .metric-card').count()
     check('行3卡3张', t0g_cards == 3, str(t0g_cards))
     t0g_txt = page.locator('#t0GridT0').inner_text()
-    check('行3含纯做T+相对做T超额', '纯做T累计' in t0g_txt and '相对做T' in t0g_txt and '21.6%' in t0g_txt, t0g_txt[:300])
+    check('行3含纯做T+相对做T超额', '纯做T累计' in t0g_txt and '相对做T' in t0g_txt and '21.3%' in t0g_txt, t0g_txt[:300])
     # 历史状态分布（与每日记录同款三态）
     hdist = page.locator('#t0StatusDist').inner_text()
     check('历史状态分布含全仓日', '全仓日' in hdist, hdist[:120])

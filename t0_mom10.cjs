@@ -72,21 +72,21 @@ function calcMom(series) {
     } else {
       r.mom10 = null; // 不足 10 日，无动量
     }
-    // 模式：T 日模式由 T-1 日信号决定（默认做T）；实盘已全仓日（t0_daily 记录 status=全仓）强制保持全仓，尊重真实操作
+    // 模式：T 日模式由 T-1 日信号决定（默认做T）；5% 策略口径下不沿用旧阈值时代实盘全仓标记
     const prev = i >= 1 ? series[i - 1] : null;
-    r.mode = (r.t0_status === '全仓')
-      ? '全仓'
-      : ((prev && prev.mom10 !== null && prev.mom10 > MOM_THRESHOLD) ? '全仓' : '做T');
+    r.mode = (prev && prev.mom10 !== null && prev.mom10 > MOM_THRESHOLD) ? '全仓' : '做T';
   }
   return series;
 }
 
 // 状态归一：聚宽 CSV 用 双边/仅买/未触发，生产 t0_daily 用 双边成交/仅买14:50卖出/未触发买入
+// 5% 策略口径：旧阈值时代实盘全仓日（t0_daily status=全仓）若未达 5% 阈值 → 归为做T未触发，保证回测与策略一致
 function normStatus(st) {
   const s = (st || '').trim();
   if (s === '双边') return '双边成交';
   if (s === '仅买') return '仅买14:50卖出';
   if (s === '未触发') return '未触发买入';
+  if (s === '全仓') return '未触发买入';
   return s || '做T'; // 兜底（无状态的历史日）
 }
 
