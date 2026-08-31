@@ -1,28 +1,24 @@
 {
-  "date": "20260828",
-  "generated_at": "2026-08-29T12:13:47.065Z",
+  "date": "20260831",
+  "generated_at": "2026-08-31T14:06:08.268Z",
   "signal": {
-    "mom10": 0.0384,
-    "mom10_pct": 3.84,
-    "trigger": true,
-    "mode": "全仓",
-    "note": "昨日 mom10 超3%，今日满仓持有，不做T"
+    "mom10": 0.0404,
+    "mom10_pct": 4.04,
+    "trigger": false,
+    "mode": "做T",
+    "note": "昨日 mom10 未超5%，今日半仓做T"
   },
   "detail": {
-    "signal_date": "20260828",
-    "close_now": 1.462,
-    "close_10ago": 1.408,
-    "mom10_pct": 3.84,
-    "threshold_pct": 3,
-    "gap_pct": 0.84,
-    "next_mode": "全仓",
-    "next_floor_price": 1.453,
-    "drop_to_switch_pct": 0.62,
+    "signal_date": "20260831",
+    "close_now": 1.468,
+    "close_10ago": 1.411,
+    "mom10_pct": 4.04,
+    "threshold_pct": 5,
+    "gap_pct": -0.96,
+    "next_mode": "做T",
+    "next_floor_price": 1.491,
+    "drop_to_switch_pct": -1.57,
     "trend": [
-      {
-        "date": "20260817",
-        "mom10_pct": -0.91
-      },
       {
         "date": "20260818",
         "mom10_pct": 1.21
@@ -58,6 +54,10 @@
       {
         "date": "20260828",
         "mom10_pct": 3.84
+      },
+      {
+        "date": "20260831",
+        "mom10_pct": 4.04
       }
     ]
   }

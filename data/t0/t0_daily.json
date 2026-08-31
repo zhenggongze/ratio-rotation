@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-29 19:18:52",
-  "count": 17,
+  "updated_at": "2026-08-31 13:30:23",
+  "count": 18,
   "records": [
     {
       "date": "2026-08-06",
@@ -404,6 +404,32 @@
       "cum_net": 18050.19,
       "reason": "mom10触发",
       "mom10": 0.0384
+    },
+    {
+      "date": "2026-08-31",
+      "prev_close": 1.462,
+      "open": 1.463,
+      "close": 1.468,
+      "buy_p": null,
+      "sell_p": null,
+      "shares": null,
+      "gap_pct": 0.07,
+      "status": "全仓",
+      "reason": "mom10触发",
+      "mom10": 0.0384,
+      "buy_filled": null,
+      "sell_filled": null,
+      "buy_time": null,
+      "sell_time": null,
+      "recover_price": null,
+      "gross": 0,
+      "commission": 0,
+      "trades": 0,
+      "net": 0,
+      "hold_pct": 0.41,
+      "net_pct": 0,
+      "excess_pct": 0,
+      "cum_net": 18050.19
     }
   ]
 }

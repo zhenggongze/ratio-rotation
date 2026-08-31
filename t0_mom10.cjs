@@ -1,16 +1,16 @@
 // mom10 动态策略数据生成（2020年以来，做T日半仓做T / 全仓日满仓持有）
-// mom10 = 收盘 / 10交易日前收盘 - 1，默认阈值 3%（可用 MOM_THRESHOLD 环境变量覆盖，如 MOM_THRESHOLD=0.04），仅上涨方向触发，T日信号 T+1 生效
+// mom10 = 收盘 / 10交易日前收盘 - 1，默认阈值 5%（可用 MOM_THRESHOLD 环境变量覆盖，如 MOM_THRESHOLD=0.04），仅上涨方向触发，T日信号 T+1 生效
 // 数据源：聚宽 CSV（2019-12-20~2026-08-07，含 t0_net 做T净利）+ t0_daily.json（8-06起做T净利/日线）
 // 输出：mom10_daily.json（日线+动量+模式）、mom10_signal.json（最新信号）、mom10_backtest.json（三策略回测）；非默认阈值输出带后缀文件（如 mom10_backtest_004.json）
 const fs = require('fs');
 const path = require('path');
 
-const MOM_THRESHOLD = process.env.MOM_THRESHOLD ? parseFloat(process.env.MOM_THRESHOLD) : 0.03;   // mom10 > 阈值 触发
+const MOM_THRESHOLD = process.env.MOM_THRESHOLD ? parseFloat(process.env.MOM_THRESHOLD) : 0.05;   // mom10 > 阈值 触发（默认5%）
 const PERIOD = 10;            // 10 日动量
 const CAP = 500000;           // 做T现金（半仓做T时做T部分）
 const TOTAL_CAP = 1000000;    // 总资金 100 万（底仓50万 + 做T现金50万）
 const START = '20200101';     // 回测起点（2020 年以来）
-const SUFFIX = (MOM_THRESHOLD === 0.03) ? '' : '_' + String(MOM_THRESHOLD).replace('.', '');   // 非默认阈值输出文件后缀
+const SUFFIX = (MOM_THRESHOLD === 0.05) ? '' : '_' + String(MOM_THRESHOLD).replace('.', '');   // 非默认阈值输出文件后缀
 
 const CSV_FILE = path.join(__dirname, 'data', 't0', 'analysis_daily_full.csv');
 const T0_DAILY = path.join(__dirname, 'data', 't0', 't0_daily.json');
@@ -72,9 +72,11 @@ function calcMom(series) {
     } else {
       r.mom10 = null; // 不足 10 日，无动量
     }
-    // 模式：T 日模式由 T-1 日信号决定（默认做T）
+    // 模式：T 日模式由 T-1 日信号决定（默认做T）；实盘已全仓日（t0_daily 记录 status=全仓）强制保持全仓，尊重真实操作
     const prev = i >= 1 ? series[i - 1] : null;
-    r.mode = (prev && prev.mom10 !== null && prev.mom10 > MOM_THRESHOLD) ? '全仓' : '做T';
+    r.mode = (r.t0_status === '全仓')
+      ? '全仓'
+      : ((prev && prev.mom10 !== null && prev.mom10 > MOM_THRESHOLD) ? '全仓' : '做T');
   }
   return series;
 }
@@ -186,10 +188,12 @@ function main() {
   };
   fs.writeFileSync(MOM_JSON, JSON.stringify(momDaily, null, 2), 'utf-8');
 
-  // mom10_signal.json（最新：昨日信号 → 今日执行模式 + 详细决策指标）
+  // mom10_signal.json（最新：最新收盘 mom10 → 下一交易日模式 T+1 生效 + 详细决策指标）
   const last = valid[valid.length - 1];
-  const todayMode = last ? last.mode : '做T';
   const lastMom = last ? last.mom10 : null;
+  // 注意：mode 必须由「最新收盘 mom10」与阈值比较得出（T+1 生效），不能取 last.mode
+  // （last.mode 是昨日信号决定的当日实盘模式，含实盘全仓强制，不代表下一交易日）
+  const todayMode = (lastMom !== null && lastMom > MOM_THRESHOLD) ? '全仓' : '做T';
   const sig = {
     date: last ? last.date : null,
     generated_at: new Date().toISOString(),
