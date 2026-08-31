@@ -2761,7 +2761,7 @@
         const statusCls = isFull ? 'ok'
           : r.status === '双边成交' ? 'ok'
           : (r.status === '跳过' || (r.status && String(r.status).indexOf('仅买') === 0)) ? 'warn' : 'gray';
-        const trade = isFull ? '—'
+        const trade = isFull ? '无'
           : r.buy_filled === null ? '待'
           : (r.buy_filled ? '✓' : '—') + (r.sell_filled ? '✓' : '—');
         const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(1) + '%';
