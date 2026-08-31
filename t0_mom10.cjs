@@ -1,21 +1,22 @@
 // mom10 动态策略数据生成（2020年以来，做T日半仓做T / 全仓日满仓持有）
-// mom10 = 收盘 / 10交易日前收盘 - 1，阈值 3%，仅上涨方向触发，T日信号 T+1 生效
+// mom10 = 收盘 / 10交易日前收盘 - 1，默认阈值 3%（可用 MOM_THRESHOLD 环境变量覆盖，如 MOM_THRESHOLD=0.04），仅上涨方向触发，T日信号 T+1 生效
 // 数据源：聚宽 CSV（2019-12-20~2026-08-07，含 t0_net 做T净利）+ t0_daily.json（8-06起做T净利/日线）
-// 输出：mom10_daily.json（日线+动量+模式）、mom10_signal.json（最新信号）、mom10_backtest.json（三策略回测）
+// 输出：mom10_daily.json（日线+动量+模式）、mom10_signal.json（最新信号）、mom10_backtest.json（三策略回测）；非默认阈值输出带后缀文件（如 mom10_backtest_004.json）
 const fs = require('fs');
 const path = require('path');
 
-const MOM_THRESHOLD = 0.03;   // mom10 > 3% 触发
+const MOM_THRESHOLD = process.env.MOM_THRESHOLD ? parseFloat(process.env.MOM_THRESHOLD) : 0.03;   // mom10 > 阈值 触发
 const PERIOD = 10;            // 10 日动量
 const CAP = 500000;           // 做T现金（半仓做T时做T部分）
 const TOTAL_CAP = 1000000;    // 总资金 100 万（底仓50万 + 做T现金50万）
 const START = '20200101';     // 回测起点（2020 年以来）
+const SUFFIX = (MOM_THRESHOLD === 0.03) ? '' : '_' + String(MOM_THRESHOLD).replace('.', '');   // 非默认阈值输出文件后缀
 
 const CSV_FILE = path.join(__dirname, 'data', 't0', 'analysis_daily_full.csv');
 const T0_DAILY = path.join(__dirname, 'data', 't0', 't0_daily.json');
-const MOM_JSON = path.join(__dirname, 'data', 't0', 'mom10_daily.json');
-const SIG_JSON = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
-const BT_JSON = path.join(__dirname, 'data', 't0', 'mom10_backtest.json');
+const MOM_JSON = path.join(__dirname, 'data', 't0', 'mom10_daily' + SUFFIX + '.json');
+const SIG_JSON = path.join(__dirname, 'data', 't0', 'mom10_signal' + SUFFIX + '.json');
+const BT_JSON = path.join(__dirname, 'data', 't0', 'mom10_backtest' + SUFFIX + '.json');
 
 // ===== 1. 读聚宽 CSV（2019-12-20 ~ 2026-08-07）=====
 function loadCsv() {
@@ -118,13 +119,15 @@ function runBacktest(series) {
       date: r.date,
       status: isFull ? '全仓' : normStatus(r.t0_status),
       mom10: r.mom10 != null ? Math.round(r.mom10 * 10000) / 10000 : null,   // 该日10日动量（全仓行前端展示用）
+      ret: r.ret != null ? Math.round(r.ret * 10000) / 10000 : null,         // 当日复权收益率（官方回测口径，含分红）
       prev_close: r.prev_close != null ? Math.round(r.prev_close * 1000) / 1000 : null,
       open: r.open != null ? Math.round(r.open * 1000) / 1000 : null,
       close: r.close != null ? Math.round(r.close * 1000) / 1000 : null,
       buy_p: null, sell_p: null, shares: null,
       buy_filled: null, sell_filled: null, buy_time: null, sell_time: null, recover_price: null,
       gross: 0, commission: 0, trades: 0,
-      net: isFull ? 0 : Math.round(r.t0_net * 100) / 100,              // 做T净利（金额）
+      t0_net: Math.round(r.t0_net * 100) / 100,                        // 当日做T净利（原始，不论模式，重建纯做T用）
+      net: isFull ? 0 : Math.round(r.t0_net * 100) / 100,              // 做T净利（金额；mom10全仓日=0）
       hold_pct: holdPct,
       net_pct: netPct,
       excess_pct: isFull ? 0 : Math.round(netPct * 100) / 100,
@@ -163,7 +166,7 @@ function fullSegStats(daily) {
 
 function main() {
   console.log('='.repeat(56));
-  console.log('  mom10 动态策略数据生成（阈值 3%，T+1 生效）');
+  console.log(`  mom10 动态策略数据生成（阈值 ${(MOM_THRESHOLD * 100).toFixed(0)}%，T+1 生效）`);
   console.log('='.repeat(56));
   const series = calcMom(buildSeries());
   const valid = series.filter(r => r.date >= START);
@@ -195,7 +198,7 @@ function main() {
       mom10_pct: lastMom !== null ? +(lastMom * 100).toFixed(2) : null,
       trigger: lastMom !== null && lastMom > MOM_THRESHOLD,
       mode: todayMode,
-      note: todayMode === '全仓' ? '昨日 mom10 超3%，今日满仓持有，不做T' : '昨日 mom10 未超3%，今日半仓做T'
+      note: todayMode === '全仓' ? `昨日 mom10 超${(MOM_THRESHOLD * 100).toFixed(0)}%，今日满仓持有，不做T` : `昨日 mom10 未超${(MOM_THRESHOLD * 100).toFixed(0)}%，今日半仓做T`
     }
   };
   // 详细指标：证据链（10日前收盘→最新收盘）、距阈值、安全边际、动量趋势、全仓段（辅助选择 + 调整预警）
