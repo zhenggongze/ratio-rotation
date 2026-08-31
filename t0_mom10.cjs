@@ -97,11 +97,26 @@ function runBacktest(series) {
   let cumMom = 0, cumT0 = 0, cumHold = 0;
   let fullDays = 0, t0Days = 0, bothDays = 0, buyOnlyDays = 0, untrigDays = 0, otherT0Days = 0;
   let prevCloseForCum = null;
-  for (const r of series) {
+  for (let i = 0; i < series.length; i++) {
+    const r = series[i];
     if (r.date < START) continue;
     const ret = r.ret || 0;
     const isFull = r.mode === '全仓';
-    const momNet = isFull ? TOTAL_CAP * ret : CAP * ret + r.t0_net;   // mom10 动态
+    // 前一日模式（区间内才参与切换判断）
+    const prevMode = (i >= 1 && series[i - 1].date >= START) ? series[i - 1].mode : null;
+    // 实盘口径（用户 9:25 决定当天模式，切换日按开盘价调仓）：
+    //   做T→满仓切换日：开盘价买入另 50万 → 底仓50万吃全天，新买50万从开盘价起算
+    //   满仓→做T切换日：开盘价卖出 50万 → 卖出部分吃到开盘前跳空，底仓50万吃全天 + 做T净利
+    let momNet;
+    const openRet = r.open ? (r.close / r.open - 1) : ret;   // 开盘价→收盘（新买入50万）
+    const gapRet = r.prev_close ? (r.open / r.prev_close - 1) : 0;  // 昨收→开盘（卖出的50万）
+    if (isFull && prevMode === '做T') {
+      momNet = CAP * ret + CAP * openRet;
+    } else if (!isFull && prevMode === '全仓') {
+      momNet = CAP * ret + CAP * gapRet + r.t0_net;
+    } else {
+      momNet = isFull ? TOTAL_CAP * ret : CAP * ret + r.t0_net;   // mom10 动态
+    }
     const t0Net = CAP * ret + r.t0_net;                                // 纯做T
     const holdNet = TOTAL_CAP * ret;                                   // 纯满仓
     cumMom += momNet; cumT0 += t0Net; cumHold += holdNet;
