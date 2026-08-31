@@ -2764,7 +2764,7 @@
         const trade = isFull ? '无'
           : r.buy_filled === null ? '待'
           : (r.buy_filled ? '✓' : '—') + (r.sell_filled ? '✓' : '—');
-        const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(1) + '%';
+        const fmtPct = v => (v === null || v === undefined) ? '—' : Number(v).toFixed(2) + '%';
         // 当日净利(扣手续费)：全仓日=当日持有收益（100万直接）；做T日=（底仓持有+做T差价）÷2（100万总资金基准）
         const dayNet = isFull
           ? (r.hold_pct === null || r.hold_pct === undefined) ? null : Math.round(r.hold_pct * 100) / 100

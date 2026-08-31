@@ -43,7 +43,7 @@ with sync_playwright() as p:
     d828_html = page.evaluate("() => { const r = Array.from(document.querySelectorAll('#t0DailyBody tr')).find(x => x.textContent.includes('2026-08-28')); return r ? r.textContent.replace(/\\s+/g,' ').trim() : '' }")
     check('8-28 显示仅买14:50卖出', '仅买14:50卖出' in d828_html and '全仓' not in d828_html.split('2026-08-28')[1][:30], d828_html[:150])
     check('8-28 含做T时间', '09:50' in d828_html.split('2026-08-28')[1][:40] and '14:50' in d828_html, d828_html[:150])
-    check('8-28 含做T净利%', '0.5%' in d828_html, d828_html[:150])
+    check('8-28 含做T净利%', '0.51%' in d828_html, d828_html[:150])
     # 历史明细 8-28 为仅买14:50卖出
     hf828 = page.evaluate("() => { const r = Array.from(document.querySelectorAll('#t0HistoryDailyBody tr')).find(x => x.textContent.includes('2026-08-28')); return r ? r.textContent.replace(/\\s+/g,' ').trim() : '' }")
     check('历史明细8-28仅买14:50卖出', '仅买14:50卖出' in hf828 and '全仓' not in hf828, hf828[:150])
