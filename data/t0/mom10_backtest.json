@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T14:35:00.671Z",
+  "generated_at": "2026-08-31T14:42:20.765Z",
   "summary": {
     "basis": "mom10_dynamic",
     "threshold": 0.05,
@@ -9,14 +9,14 @@
     "end_date": "20260831",
     "full_days": 92,
     "t0_days": 1523,
-    "pure_t0_net": 559152.1,
+    "pure_t0_net": 566586.29,
     "pure_hold_net": 712514.98,
-    "mom_net": 749378.12,
+    "mom_net": 756812.31,
     "hold_profit": 435589.78,
-    "net_profit": 313788.34,
+    "net_profit": 321222.53,
     "both_days": 158,
-    "buy_only_days": 872,
-    "untrig_days": 493,
+    "buy_only_days": 874,
+    "untrig_days": 491,
     "skip_days": 0,
     "trig_days": 1523,
     "full_seg_count": 26,
@@ -77,9 +77,9 @@
       "year": "2026",
       "full_days": 5,
       "t0_days": 155,
-      "pure_t0_net": 107200.89,
+      "pure_t0_net": 114635.08,
       "pure_hold_net": 75213.98,
-      "mom_net": 110230.46
+      "mom_net": 117664.65
     }
   ],
   "param": {
@@ -42035,7 +42035,7 @@
     },
     {
       "date": "20260828",
-      "status": "未触发买入",
+      "status": "仅买14:50卖出",
       "mom10": 0.0384,
       "ret": 0.0021,
       "prev_close": 1.459,
@@ -42052,16 +42052,16 @@
       "gross": 0,
       "commission": 0,
       "trades": 0,
-      "t0_net": 0,
-      "net": 0,
+      "t0_net": 4067.18,
+      "net": 4067.18,
       "hold_pct": 0.21,
-      "net_pct": 0,
-      "excess_pct": 0,
-      "cum_net": 747326.14
+      "net_pct": 0.81,
+      "excess_pct": 0.81,
+      "cum_net": 751393.32
     },
     {
       "date": "20260831",
-      "status": "未触发买入",
+      "status": "仅买14:50卖出",
       "mom10": 0.0404,
       "ret": 0.0041,
       "prev_close": 1.462,
@@ -42078,12 +42078,12 @@
       "gross": 0,
       "commission": 0,
       "trades": 0,
-      "t0_net": 0,
-      "net": 0,
+      "t0_net": 3367.01,
+      "net": 3367.01,
       "hold_pct": 0.41,
-      "net_pct": 0,
-      "excess_pct": 0,
-      "cum_net": 749378.12
+      "net_pct": 0.67,
+      "excess_pct": 0.67,
+      "cum_net": 756812.31
     }
   ]
 }

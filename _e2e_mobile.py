@@ -43,7 +43,7 @@ with sync_playwright() as p:
     rows = page.locator('#t0DailyBody tr').count()
     check('每日记录18行', rows == 18, str(rows))
     d828 = page.evaluate("() => { const r = Array.from(document.querySelectorAll('#t0DailyBody tr')).find(x => x.textContent.includes('2026-08-28')); return r ? r.textContent.replace(/\\s+/g,' ').trim() : '' }")
-    check('8-28未触发(5%口径)', '未触发' in d828 and '全仓' not in d828, d828[:150])
+    check('8-28仅买14:50卖出', '仅买14:50卖出' in d828 and '全仓' not in d828, d828[:150])
     # 每日统计卡3张
     cards = page.locator('#t0DailyCards .metric-card').count()
     check('每日卡3张', cards == 3, str(cards))
