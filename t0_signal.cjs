@@ -89,10 +89,18 @@ function formatSignalText(sig, mom) {
     L.push(`⚠ 低开${Math.abs(sig.gap_pct)}%超2%，按纪律今日不做T不挂单`);
     return L.join('\n');
   }
-  // mom10 动态模式：今日操作行（标题后）+ 昨日动量（末尾）
+  // mom10 动态模式：今日操作行（标题后）+ 昨日动量（末尾）；切换日体现当日调仓动作
   const momInfo = (mom && mom.signal) ? mom.signal : null;
   if (momInfo) {
-    L.push(momInfo.mode === '全仓' ? '今日操作：满仓！！！' : '今日操作：半仓做T');
+    const curMode = momInfo.mode;                                   // 推送日（下一交易日）模式
+    const prevMode = (mom.detail && mom.detail.prev_mode) || null;  // 上一交易日模式
+    if (curMode === '全仓' && prevMode === '做T') {
+      L.push('今日操作：满仓！！！（切换：开盘补足至满仓）');
+    } else if (curMode === '做T' && prevMode === '全仓') {
+      L.push('今日操作：半仓做T（切换：开盘卖出半仓）');
+    } else {
+      L.push(curMode === '全仓' ? '今日操作：满仓！！！' : '今日操作：半仓做T');
+    }
   }
   const gapDesc = sig.gap_pct > 0 ? `高开${sig.gap_pct}%` : (sig.gap_pct < 0 ? `低开${Math.abs(sig.gap_pct)}%` : '平开');
   const buyPct = ((1 - T0_CONFIG.BUY_K) * 100).toFixed(1);      // v2 买 -0.3%

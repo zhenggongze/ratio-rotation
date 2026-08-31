@@ -229,6 +229,8 @@ function main() {
   const trend = valid.filter(r => r.mom10 !== null).slice(-10).map(r => ({ date: r.date, mom10_pct: +(r.mom10 * 100).toFixed(2) }));
   sig.detail = {
     signal_date: last ? last.date : null,
+    prev_mode: last ? last.mode : null,          // 上一交易日实际模式（判断推送日是否切换调仓）
+    prev_date: last ? last.date : null,
     close_now: last ? last.close : null,
     close_10ago: tenAgo ? tenAgo.close : null,
     mom10_pct: sig.signal.mom10_pct,

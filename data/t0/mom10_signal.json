@@ -1,6 +1,6 @@
 {
   "date": "20260831",
-  "generated_at": "2026-08-31T14:42:20.763Z",
+  "generated_at": "2026-08-31T14:53:39.608Z",
   "signal": {
     "mom10": 0.0404,
     "mom10_pct": 4.04,
@@ -10,6 +10,8 @@
   },
   "detail": {
     "signal_date": "20260831",
+    "prev_mode": "做T",
+    "prev_date": "20260831",
     "close_now": 1.468,
     "close_10ago": 1.411,
     "mom10_pct": 4.04,
