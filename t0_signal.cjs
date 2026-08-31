@@ -103,7 +103,7 @@ function formatSignalText(sig, mom) {
   L.push(`「限价委托」+「即时现价」`);
   if (momInfo) {
     const momPct = momInfo.mom10_pct != null ? momInfo.mom10_pct.toFixed(2) + '%' : '—';
-    const thr = (mom.detail && mom.detail.threshold_pct != null) ? mom.detail.threshold_pct : 3;
+    const thr = (mom.detail && mom.detail.threshold_pct != null) ? mom.detail.threshold_pct : 5;
     L.push(`昨日动量：${momPct}${momInfo.mode === '全仓' ? '＞' : '≤'}${thr}%`);
   }
   return L.join('\n');
