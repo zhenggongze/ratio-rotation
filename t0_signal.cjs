@@ -80,13 +80,19 @@ function beijingDateStr() {
 
 // ============================================================
 // 格式化信号文本（简洁纯文本，与轮动推送风格一致）
+// mom: mom10_signal.json 整体对象（含 signal 与 detail），无则纯做T格式
 // ============================================================
-function formatSignalText(sig) {
+function formatSignalText(sig, mom) {
   const L = [];
   L.push(`【做T挂单信号】${beijingDateStr()}`);
   if (sig.skip) {
     L.push(`⚠ 低开${Math.abs(sig.gap_pct)}%超2%，按纪律今日不做T不挂单`);
     return L.join('\n');
+  }
+  // mom10 动态模式：今日操作行（标题后）+ 昨日动量（末尾）
+  const momInfo = (mom && mom.signal) ? mom.signal : null;
+  if (momInfo) {
+    L.push(momInfo.mode === '全仓' ? '今日操作：满仓！！！' : '今日操作：半仓做T');
   }
   const gapDesc = sig.gap_pct > 0 ? `高开${sig.gap_pct}%` : (sig.gap_pct < 0 ? `低开${Math.abs(sig.gap_pct)}%` : '平开');
   const buyPct = ((1 - T0_CONFIG.BUY_K) * 100).toFixed(1);      // v2 买 -0.3%
@@ -95,6 +101,11 @@ function formatSignalText(sig) {
   L.push(`买入：${sig.buy_p.toFixed(3)}（开盘价跌${buyPct}%）`);
   L.push(`卖出：${sig.sell_p.toFixed(3)}（开盘价涨${sellPct}%）`);
   L.push(`「限价委托」+「即时现价」`);
+  if (momInfo) {
+    const momPct = momInfo.mom10_pct != null ? momInfo.mom10_pct.toFixed(2) + '%' : '—';
+    const thr = (mom.detail && mom.detail.threshold_pct != null) ? mom.detail.threshold_pct : 3;
+    L.push(`昨日动量：${momPct}${momInfo.mode === '全仓' ? '＞' : '≤'}${thr}%`);
+  }
   return L.join('\n');
 }
 
@@ -142,24 +153,14 @@ async function main() {
     process.exit(1);
   }
 
-  const text = formatSignalText(sig);
-
-  // 并入 mom10 动态模式（昨日动量 → 今日执行），全仓日提示不做T
+  // 读取 mom10 动态信号（昨日动量 → 今日执行），无则纯做T推送
+  let momSignal = null;
   try {
     const mf = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
-    if (fs.existsSync(mf)) {
-      const ms = JSON.parse(fs.readFileSync(mf, 'utf-8')).signal;
-      if (ms) {
-        const momPct = ms.mom10_pct != null ? ms.mom10_pct.toFixed(2) + '%' : '—';
-        const momLine = ms.mode === '全仓'
-          ? `【mom10】昨日动量 ${momPct} 超3% → 今日满仓持有，不挂做T单`
-          : `【mom10】昨日动量 ${momPct} 未超3% → 今日半仓做T`;
-        // 全仓日把 mom10 行放最前提示，做T日追加在末尾
-        if (ms.mode === '全仓') console.log(`\nmom10 状态: ${momLine}`);
-      }
-    }
+    if (fs.existsSync(mf)) momSignal = JSON.parse(fs.readFileSync(mf, 'utf-8'));
   } catch (e) { /* mom10 信号缺失不阻塞做T推送 */ }
 
+  const text = formatSignalText(sig, momSignal);
   console.log('\n' + text);
 
   // 保存信号文件
@@ -180,23 +181,8 @@ async function main() {
   console.log(`\n✓ 信号已保存: ${SIGNAL_FILE}`);
 
   if (doPush) {
-    // 推送时重新拼 mom10 行（避免控制台/推送不一致）
-    let pushText = text;
-    try {
-      const mf = path.join(__dirname, 'data', 't0', 'mom10_signal.json');
-      if (fs.existsSync(mf)) {
-        const ms = JSON.parse(fs.readFileSync(mf, 'utf-8')).signal;
-        if (ms) {
-          const momPct = ms.mom10_pct != null ? ms.mom10_pct.toFixed(2) + '%' : '—';
-          const momLine = ms.mode === '全仓'
-            ? `【mom10】昨日动量 ${momPct} 超3% → 今日满仓持有，不挂做T单`
-            : `【mom10】昨日动量 ${momPct} 未超3% → 今日半仓做T`;
-          pushText = (ms.mode === '全仓' ? momLine + '\n' + text : text + '\n' + momLine);
-        }
-      }
-    } catch (e) { /* 忽略 */ }
     console.log('\n推送 PushDeer...');
-    const r = await sendPushWithRetry(pushText, '', 't0_signal');
+    const r = await sendPushWithRetry(text, '', 't0_signal');
     if (r.success) {
       console.log('  ✓ 推送成功');
     } else {
