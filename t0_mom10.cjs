@@ -14,6 +14,7 @@ const SUFFIX = (MOM_THRESHOLD === 0.05) ? '' : '_' + String(MOM_THRESHOLD).repla
 
 const CSV_FILE = path.join(__dirname, 'data', 't0', 'analysis_daily_full.csv');
 const T0_DAILY = path.join(__dirname, 'data', 't0', 't0_daily.json');
+const FIVE_MIN_FILE = path.join(__dirname, 'data', 't0', 'red5min_merged.json');
 const MOM_JSON = path.join(__dirname, 'data', 't0', 'mom10_daily' + SUFFIX + '.json');
 const SIG_JSON = path.join(__dirname, 'data', 't0', 'mom10_signal' + SUFFIX + '.json');
 const BT_JSON = path.join(__dirname, 'data', 't0', 'mom10_backtest' + SUFFIX + '.json');
@@ -43,9 +44,52 @@ function loadT0Daily() {
       open: r.open, close: r.close, prev_close: r.prev_close,
       ret: r.prev_close ? r.close / r.prev_close - 1 : 0,
       t0_net: typeof r.net === 'number' ? r.net : 0,
-      t0_status: r.status || ''
+      t0_status: r.status || '',
+      buy_p: (r.buy_p ?? null), sell_p: (r.sell_p ?? null), recover_price: (r.recover_price ?? null),
+      buy_filled: (r.buy_filled ?? null), sell_filled: (r.sell_filled ?? null),
+      buy_time: (r.buy_time ?? null), sell_time: (r.sell_time ?? null)
     }));
   } catch (e) { return []; }
+}
+
+// ===== 2.5 读聚宽5分钟数据，构建「日期 → 真实盘价」映射（未复权真实盘中价，覆盖期内与生产 backtest_red_t0.py 口径一致）
+// open=首bar开盘、close=末bar收盘、buy_p=floor(open*0.997,3)、sell_p=floor(open*1.008,3)、rp=14:50bar收盘
+// 仅买日 14:50 恢复卖出价用真实 14:50 价，不用收盘近似；整行价基统一为未复权真实价，避免与 CSV 前复权价混淆
+function floor3(x) { return Math.floor(x * 1000) / 1000; }
+function loadDayPriceMap() {
+  const symbolKey = '515180';
+  const map = {};
+  try {
+    const data = JSON.parse(fs.readFileSync(FIVE_MIN_FILE, 'utf-8'));
+    const bars = data[symbolKey] ? (data[symbolKey].bars || []) : [];
+    const byDay = {};
+    for (const b of bars) {
+      if (!b.date) continue;
+      const day = String(b.date).replace(/-/g, '');
+      (byDay[day] = byDay[day] || []).push(b);
+    }
+    for (const day of Object.keys(byDay)) {
+      const dayBars = byDay[day].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      if (dayBars.length === 0) continue;
+      const openP = dayBars[0].open, closeP = dayBars[dayBars.length - 1].close;
+      // 14:50 bar 的收盘作为真实 14:50 价（仅买日恢复卖出价）；无 14:50 时取 14:55 bar
+      let rp = null;
+      for (const b of dayBars) {
+        const sec = (b.time || '').slice(0, 5);
+        if (sec === '14:50' || sec === '14:55') { rp = b.close; if (sec === '14:50') break; }
+      }
+      if (typeof openP === 'number' && typeof closeP === 'number') {
+        map[day] = {
+          open: openP, close: closeP,
+          buy_p: floor3(openP * 0.997), sell_p: floor3(openP * 1.008),
+          rp: (typeof rp === 'number') ? rp : closeP
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('警告: 读取 5 分钟数据失败，价格回退 CSV 反算:', e.message);
+  }
+  return map;
 }
 
 // ===== 3. 合并日线序列（CSV + t0_daily 增量，按日期去重）=====
@@ -56,6 +100,10 @@ function buildSeries() {
     if (map[r.date]) {
       map[r.date].t0_net = r.t0_net;       // 增量/修正值优先（如 8-26）
       map[r.date].t0_status = r.t0_status;
+      map[r.date].buy_p = r.buy_p; map[r.date].sell_p = r.sell_p;
+      map[r.date].recover_price = r.recover_price;
+      map[r.date].buy_filled = r.buy_filled; map[r.date].sell_filled = r.sell_filled;
+      map[r.date].buy_time = r.buy_time; map[r.date].sell_time = r.sell_time;
     } else {
       map[r.date] = r;
     }
@@ -75,6 +123,8 @@ function calcMom(series) {
     // 模式：T 日模式由 T-1 日信号决定（默认做T）；5% 策略口径下不沿用旧阈值时代实盘全仓标记
     const prev = i >= 1 ? series[i - 1] : null;
     r.mode = (prev && prev.mom10 !== null && prev.mom10 > MOM_THRESHOLD) ? '全仓' : '做T';
+    // 全仓触发信号 = T-1 日收盘 mom10（T+1 生效；前端展示"为什么全仓"用，避免把当天回落动量误读为触发条件）
+    if (r.mode === '全仓' && prev && prev.mom10 != null) r.sig_mom10 = prev.mom10;
   }
   return series;
 }
@@ -91,7 +141,7 @@ function normStatus(st) {
 }
 
 // ===== 5. 三大策略回测（2020 起）=====
-function runBacktest(series) {
+function runBacktest(series, dayPriceMap) {
   const daily = [];
   const yearly = {};
   let cumMom = 0, cumT0 = 0, cumHold = 0;
@@ -132,16 +182,35 @@ function runBacktest(series) {
 
     const holdPct = Math.round(ret * 10000) / 100;                     // 收益率%（全仓日=100万直接；做T日=底仓50万）
     const netPct = isFull ? 0 : Math.round((r.t0_net / CAP) * 10000) / 100;
+    // 价格（整行价基统一）：
+    //   优先 5min 真实盘价（未复权，覆盖 2024-07-23 起，整行一致）
+    //   其次 t0_daily 真实成交价（增量，仅 2026-08 起有）
+    //   最后 CSV 前复权价 × 策略系数反算（2020-2024 聚宽日线，无 5min 覆盖的早期日）
+    const dp = dayPriceMap[r.date];
+    const bx = 0.997, sk = 1.008;
+    const openP = dp ? dp.open : (r.open != null ? +r.open.toFixed(3) : null);
+    const closeP = dp ? dp.close : (r.close != null ? +r.close.toFixed(3) : null);
+    const buyP = dp ? dp.buy_p
+      : (r.buy_p != null) ? r.buy_p
+      : (openP != null ? +((openP * bx).toFixed(3)) : null);
+    const sellP = dp ? dp.sell_p
+      : (r.sell_p != null) ? r.sell_p
+      : (openP != null ? +((openP * sk).toFixed(3)) : null);
+    const recoverP = dp ? dp.rp
+      : (r.recover_price != null) ? r.recover_price
+      : (closeP != null ? +closeP.toFixed(3) : null);
     daily.push({
       date: r.date,
       status: isFull ? '全仓' : normStatus(r.t0_status),
       mom10: r.mom10 != null ? Math.round(r.mom10 * 10000) / 10000 : null,   // 该日10日动量（全仓行前端展示用）
+      sig_mom10: (isFull && r.sig_mom10 != null) ? Math.round(r.sig_mom10 * 10000) / 10000 : null,   // 全仓触发信号=T-1日mom10
       ret: r.ret != null ? Math.round(r.ret * 10000) / 10000 : null,         // 当日复权收益率（官方回测口径，含分红）
       prev_close: r.prev_close != null ? Math.round(r.prev_close * 1000) / 1000 : null,
-      open: r.open != null ? Math.round(r.open * 1000) / 1000 : null,
-      close: r.close != null ? Math.round(r.close * 1000) / 1000 : null,
-      buy_p: null, sell_p: null, shares: null,
-      buy_filled: null, sell_filled: null, buy_time: null, sell_time: null, recover_price: null,
+      open: openP != null ? Math.round(openP * 1000) / 1000 : null,
+      close: closeP != null ? Math.round(closeP * 1000) / 1000 : null,
+      buy_p: buyP, sell_p: sellP, shares: r.shares ?? null,
+      buy_filled: (r.buy_filled ?? null), sell_filled: (r.sell_filled ?? null),
+      buy_time: r.buy_time ?? null, sell_time: r.sell_time ?? null, recover_price: recoverP,
       gross: 0, commission: 0, trades: 0,
       t0_net: Math.round(r.t0_net * 100) / 100,                        // 当日做T净利（原始，不论模式，重建纯做T用）
       net: isFull ? 0 : Math.round(r.t0_net * 100) / 100,              // 做T净利（金额；mom10全仓日=0）
@@ -187,7 +256,8 @@ function main() {
   console.log('='.repeat(56));
   const series = calcMom(buildSeries());
   const valid = series.filter(r => r.date >= START);
-  const bt = runBacktest(series);
+  const dayPriceMap = loadDayPriceMap();
+  const bt = runBacktest(series, dayPriceMap);
 
   // mom10_daily.json
   const momDaily = {
@@ -198,6 +268,7 @@ function main() {
     records: valid.map(r => ({
       date: r.date, open: r.open, close: r.close, prev_close: r.prev_close,
       ret: r.ret, mom10: r.mom10 !== null ? Math.round(r.mom10 * 10000) / 10000 : null,
+      sig_mom10: r.sig_mom10 != null ? Math.round(r.sig_mom10 * 10000) / 10000 : null,
       mode: r.mode, t0_net: r.t0_net
     }))
   };

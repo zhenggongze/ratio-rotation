@@ -1,21 +1,21 @@
 {
-  "date": "2026-08-31",
-  "generated_at": "2026-08-31T14:20:31.966Z",
-  "phase": "非竞价时段(参考价)",
+  "date": "2026-09-28",
+  "generated_at": "2026-09-28T01:25:39.269Z",
+  "phase": "集合竞价中(动态价)",
   "signal": {
-    "open": 1.463,
-    "prev_close": 1.462,
+    "open": 1.41,
+    "prev_close": 1.409,
     "gap_pct": 0.07,
-    "buy_p": 1.458,
-    "sell_p": 1.474,
-    "shares": 341700,
-    "buy_amt": 498199,
-    "sell_amt": 503666,
+    "buy_p": 1.405,
+    "sell_p": 1.421,
+    "shares": 354600,
+    "buy_amt": 498213,
+    "sell_amt": 503887,
     "skip": false,
     "skip_reason": "",
-    "current_price": 1.468,
-    "high": 1.471,
-    "low": 1.457,
-    "quote_time": "20260831161455"
+    "current_price": 1.41,
+    "high": 1.41,
+    "low": 1.41,
+    "quote_time": "20260928092519"
   }
 }

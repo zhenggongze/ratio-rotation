@@ -256,10 +256,21 @@ function exportFrontendData() {
       console.log(`  ⚠ 读取做T每日记录失败: ${e.message}`);
     }
   }
+  // 基准指数（上证指数/创业板指），用于每日记录展示同期与当日涨跌
+  let t0Bench = null;
+  const t0BenchFile = path.join(config.dataDir, 't0', 't0_bench.json');
+  if (fs.existsSync(t0BenchFile)) {
+    try {
+      t0Bench = JSON.parse(fs.readFileSync(t0BenchFile, 'utf-8'));
+    } catch (e) {
+      console.log(`  ⚠ 读取基准指数数据失败: ${e.message}`);
+    }
+  }
   const t0Dims = {
     signal: t0Signal,           // { date, generated_at, phase, signal }
     daily: t0Daily,             // { updated_at, count, records: [...] }
-    mom10_signal: mom10Signal   // { date, signal: { mom10, trigger, mode } }
+    mom10_signal: mom10Signal,  // { date, signal: { mom10, trigger, mode } }
+    bench: t0Bench               // { updated_at, period: {sh_pct,cyb_pct}, records: {date:{sh_pct,cyb_pct}} }
   };
 
   // 创业板(159915) 做T数据（观察期模块，结构与红利 t0 一致；回测独立文件 t0_backtest_cyb.json）
@@ -323,6 +334,7 @@ function exportFrontendData() {
       daily: t0Backtest.daily.map(r => ({
         date: r.date, status: r.status, open: r.open, close: r.close,
         mom10: r.mom10 != null ? r.mom10 : null,   // 该日10日动量（全仓行展示用）
+        sig_mom10: r.sig_mom10 != null ? r.sig_mom10 : null,   // 全仓触发信号=T-1日mom10（前端"为什么全仓"展示用）
         buy_p: r.buy_p, sell_p: r.sell_p,
         buy_filled: r.buy_filled, sell_filled: r.sell_filled,
         buy_time: r.buy_time || null, sell_time: r.sell_time || null,

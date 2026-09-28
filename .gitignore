@@ -8,6 +8,7 @@ node_modules/
 data/backtest_result.json
 data/backups/
 data/logs/
+data/certs/
 data/chart_*.html
 data/*.xlsx
 

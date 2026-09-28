@@ -1,65 +1,65 @@
 {
-  "date": "20260831",
-  "generated_at": "2026-08-31T14:53:39.608Z",
+  "date": "20260928",
+  "generated_at": "2026-09-28T08:00:56.621Z",
   "signal": {
-    "mom10": 0.0404,
-    "mom10_pct": 4.04,
+    "mom10": -0.0251,
+    "mom10_pct": -2.51,
     "trigger": false,
     "mode": "做T",
     "note": "昨日 mom10 未超5%，今日半仓做T"
   },
   "detail": {
-    "signal_date": "20260831",
+    "signal_date": "20260928",
     "prev_mode": "做T",
-    "prev_date": "20260831",
-    "close_now": 1.468,
-    "close_10ago": 1.411,
-    "mom10_pct": 4.04,
+    "prev_date": "20260928",
+    "close_now": 1.399,
+    "close_10ago": 1.435,
+    "mom10_pct": -2.51,
     "threshold_pct": 5,
-    "gap_pct": -0.96,
+    "gap_pct": -7.51,
     "next_mode": "做T",
-    "next_floor_price": 1.491,
-    "drop_to_switch_pct": -1.57,
+    "next_floor_price": 1.504,
+    "drop_to_switch_pct": -7.51,
     "trend": [
       {
-        "date": "20260818",
-        "mom10_pct": 1.21
+        "date": "20260914",
+        "mom10_pct": -2.45
       },
       {
-        "date": "20260819",
-        "mom10_pct": 2
+        "date": "20260915",
+        "mom10_pct": -3.2
       },
       {
-        "date": "20260820",
-        "mom10_pct": 1.2
+        "date": "20260916",
+        "mom10_pct": -2.21
       },
       {
-        "date": "20260821",
-        "mom10_pct": 1.34
+        "date": "20260917",
+        "mom10_pct": -2.69
       },
       {
-        "date": "20260824",
-        "mom10_pct": 1.68
+        "date": "20260918",
+        "mom10_pct": -3.03
       },
       {
-        "date": "20260825",
-        "mom10_pct": 1.69
+        "date": "20260921",
+        "mom10_pct": -0.91
       },
       {
-        "date": "20260826",
-        "mom10_pct": 2.18
+        "date": "20260922",
+        "mom10_pct": -2.13
       },
       {
-        "date": "20260827",
-        "mom10_pct": 3.84
+        "date": "20260923",
+        "mom10_pct": -4.01
       },
       {
-        "date": "20260828",
-        "mom10_pct": 3.84
+        "date": "20260924",
+        "mom10_pct": -3.49
       },
       {
-        "date": "20260831",
-        "mom10_pct": 4.04
+        "date": "20260928",
+        "mom10_pct": -2.51
       }
     ]
   }

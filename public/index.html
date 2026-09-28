@@ -648,6 +648,49 @@
     .t0-daily-stats { margin-top: 8px; font-size: 12px; color: var(--text-light); }
     .t0-daily-stats b { color: var(--pos); font-weight: 600; }
     .t0-daily-subtitle { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+    /* 每日记录：对标指数（紧凑清单 + 双向条形，移动端优先；与统计卡区分：无卡片底、分组色条） */
+    .t0-bench-wrap { margin: 10px 0 2px; }
+    .t0-bench-block { margin-bottom: 4px; }
+    .t0-bench-group-title { display: flex; align-items: center; font-size: 12px; font-weight: 600; color: var(--text-light); margin: 6px 0 2px; }
+    .t0-bench-group-title::before { content: ''; width: 3px; height: 12px; border-radius: 2px; background: #cbd3dd; margin-right: 6px; flex: 0 0 auto; }
+    .t0-bench-group-title em { font-style: normal; font-weight: 400; color: var(--text-lighter); margin-left: 2px; }
+    /* 分组配色：组标题左侧色条 */
+    .t0-bench-block.g-self .t0-bench-group-title::before { background: #e67e22; }
+    .t0-bench-block.g-a .t0-bench-group-title::before { background: #4a7ebb; }
+    .t0-bench-block.g-bond .t0-bench-group-title::before { background: #7f8c8d; }
+    .t0-bench-block.g-hk .t0-bench-group-title::before { background: #16a085; }
+    .t0-bench-block.g-us .t0-bench-group-title::before { background: #8e6fbf; }
+    .t0-bench-block.g-gold .t0-bench-group-title::before { background: #c9a227; }
+    .t0-bench-row { display: flex; align-items: center; gap: 8px; height: 24px; font-size: 12px; }
+    .t0-bench-row .bn { flex: 0 0 74px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .t0-bench-row .bbar { flex: 1 1 auto; position: relative; height: 6px; background: #eef1f5; border-radius: 3px; }
+    .t0-bench-row .bbar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #d5dbe3; }
+    .t0-bench-row .bfill { position: absolute; top: 0; height: 100%; border-radius: 3px; }
+    .t0-bench-row .bfill.up { background: var(--pos); }
+    .t0-bench-row .bfill.dn { background: var(--neg); }
+    .t0-bench-row .bsyn { flex: 0 0 56px; text-align: right; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .t0-bench-row .bday { flex: 0 0 54px; text-align: right; font-size: 11px; color: var(--text-light); font-variant-numeric: tabular-nums; }
+    .t0-bench-row .bsyn.up { color: var(--pos); }
+    .t0-bench-row .bsyn.dn { color: var(--neg); }
+    .t0-bench-row .bsyn.flat { color: var(--text-lighter); }
+    .t0-bench-row.t0-bench-head { height: 18px; font-size: 11px; color: var(--text-lighter); }
+    .t0-bench-row.t0-bench-head .bsyn { font-weight: 400; color: var(--text-lighter); }
+    /* 宽屏：限制清单宽度，避免条形被拉得过长 */
+    @media (min-width: 760px) { .t0-bench-wrap { max-width: 620px; } }
+    /* 窄屏（iPhone SE 等 ≤390px）：名称列略放宽+缩字号（避免 6 字简称被截断），数值列收紧 */
+    @media (max-width: 390px) {
+      .t0-bench-row { gap: 5px; }
+      .t0-bench-row .bn { flex-basis: 72px; font-size: 11.5px; }
+      .t0-bench-row .bsyn { flex-basis: 52px; font-size: 12px; }
+      .t0-bench-row .bday { flex-basis: 46px; font-size: 10.5px; }
+    }
+    /* 历史业绩明细状态筛选下拉 */
+    .t0-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+    .t0-filter-select {
+      padding: 6px 10px; font-size: 13px; color: var(--text);
+      background: #ffffff; border: 1px solid #d5dbe3; border-radius: 8px; cursor: pointer;
+    }
+    .t0-filter-select:focus { outline: none; border-color: var(--pos); }
     /* ===== 每日状态分布（加总=100%） ===== */
     .t0-status-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #eef1f5; margin: 10px 0 8px; }
     .t0-status-bar div { height: 100%; }
@@ -850,6 +893,9 @@
           <span class="section-subtitle" id="t0DailyMeta"></span>
         </div>
         <div class="metrics-grid" id="t0DailyCards"></div>
+        <!-- 同期对标指数（5 类差异化：标的自身 / A股风格 / 无风险对照 / 港股 / 美股 / 黄金） -->
+        <div class="t0-daily-subtitle" id="t0BenchTitle">同期涨跌对标</div>
+        <div class="t0-bench-wrap" id="t0BenchCards"></div>
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -867,6 +913,8 @@
                 <th>成交</th>
                 <th>当日净利(扣费)<sup class="t0-badge-idx" title="（底仓持有+做T差价）÷ 100万总资金基准（底仓50万+做T现金50万）">①</sup></th>
                 <th>当日超额<sup class="t0-badge-idx" title="做T差价净利 ÷ 100万总资金基准">①</sup></th>
+                <th>当日上证</th>
+                <th>当日创业板</th>
               </tr>
             </thead>
             <tbody id="t0DailyBody"></tbody>
@@ -908,6 +956,17 @@
         <div id="t0StatusDist"></div>
 
         <!-- 历史业绩：每日明细（分钟级真实成交，含买卖时间） -->
+        <div class="t0-filter-row">明细状态筛选
+          <select id="t0HistoryFilter" class="t0-filter-select" onchange="renderT0HistoryDaily(t0Backtest || (t0Data && t0Data.backtest))">
+            <option value="all">全部状态</option>
+            <option value="both">双边成交</option>
+            <option value="buyonly">仅买（14:50卖出）</option>
+            <option value="untrig">未触发买入</option>
+            <option value="full">全仓(mom10)</option>
+            <option value="skip">低开跳过</option>
+            <option value="pending">待收盘</option>
+          </select>
+        </div>
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -1021,6 +1080,17 @@
         <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：双边/仅买/未触发均为真实结果">①</sup></div>
         <div id="cybt0StatusDist"></div>
 
+        <div class="t0-filter-row">明细状态筛选
+          <select id="cybt0HistoryFilter" class="t0-filter-select" onchange="renderCybT0HistoryDaily(cybT0Backtest || (cybT0Data && cybT0Data.backtest))">
+            <option value="all">全部状态</option>
+            <option value="both">双边成交</option>
+            <option value="buyonly">仅买（13:50卖出）</option>
+            <option value="untrig">未触发买入</option>
+            <option value="skip">跳过</option>
+            <option value="pending">待收盘</option>
+          </select>
+        </div>
+
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -1132,6 +1202,17 @@
         <div class="t0-daily-subtitle">每日状态分布（加总 = 100%）<sup class="t0-badge-idx idx-real" data-cal="1" title="分钟级真实成交：双边/仅买/未触发均为真实结果">①</sup></div>
         <div id="kcbt0StatusDist"></div>
 
+        <div class="t0-filter-row">明细状态筛选
+          <select id="kcbt0HistoryFilter" class="t0-filter-select" onchange="renderKcbT0HistoryDaily(kcbT0Backtest || (kcbT0Data && kcbT0Data.backtest))">
+            <option value="all">全部状态</option>
+            <option value="both">双边成交</option>
+            <option value="buyonly">仅买（14:00卖出）</option>
+            <option value="untrig">未触发买入</option>
+            <option value="skip">跳过</option>
+            <option value="pending">待收盘</option>
+          </select>
+        </div>
+
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -1181,17 +1262,14 @@
     <!-- /kcbt0Content -->
     </div>
 
-    <div class="footer">
-      比值轮动交易决策辅助系统 · 数据更新时间：<span id="updateTime"></span><br>
-      仅供决策参考，不构成投资建议
     </div>
-  </div>
 
   <script>
     let cybData = null;
     let kcbData = null;
     let t0Data = null;
     let t0Backtest = null;        // 做T回测数据（独立文件，点击做T页签时按需加载）
+    let t0Bench = null;           // 基准指数（上证指数/创业板指）日涨跌，每日记录展示用
     let t0BacktestPromise = null;
     let cybT0Data = null;         // 创业板做T数据（frontend_data.json 的 t0_cyb 字段）
     let cybT0Backtest = null;     // 创业板做T回测（t0_backtest_cyb.json 按需加载）
@@ -1934,12 +2012,6 @@
 
     // 渲染所有数据
     function renderAll(data) {
-      document.getElementById('updateTime').textContent = new Date(data.generated_at).toLocaleString('zh-CN', {
-        timeZone: 'Asia/Shanghai',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-      });
       // 动态更新头部标题、描述和档位表标题（切换页签时跟随当前策略参数）
       const idxName = currentTab === 'kcb' ? '科创50' : '创业板';
       const idxCode = currentTab === 'kcb' ? '000688' : '399006';
@@ -2054,7 +2126,7 @@
           const key = isFull ? 'hold_pct' : 'net_pct';
           const sum = rows.reduce((a, r) => a + (typeof r[key] === 'number' ? r[key] : 0), 0);
           const val = sum / rows.length / (isFull ? 1 : 2); // 做T日÷2：100万总资金基准
-          return (val >= 0 ? '+' : '') + val.toFixed(1) + '%';
+          return fmtSignedPct2(val);
         };
         const hItems = [
           { label: '全仓日(mom10)', count: hCount('全仓'), color: '#9b59b6', avg: hAvg(histDaily.filter(r => r.status === '全仓'), true) },
@@ -2238,11 +2310,11 @@
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
           const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
+          return fmtSignedPct2(avg);
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
         const buyOnlyPosPct = buyOnlyRows.length
-          ? Math.round(buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100)
+          ? buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100
           : null;
         document.getElementById('cybt0StatusDist').innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: s.both_days, color: 'var(--pos)', avg: statAvg('双边成交') },
@@ -2361,11 +2433,11 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
+          return fmtSignedPct2(avg);
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
-          ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
+          ? dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100
           : null;
         statsEl.innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
@@ -2390,7 +2462,9 @@
         if (wrap) wrap.style.display = 'none';
         return;
       }
-      const rows = [...bt.daily].reverse();
+      const sel = document.getElementById('cybt0HistoryFilter');
+      const flt = sel ? sel.value : 'all';
+      const rows = [...bt.daily].reverse().filter(r => t0StatusMatch(r.status, flt));
       const total = rows.length;
       if (total <= CYB_T0_HISTORY_PREVIEW) {
         body.innerHTML = buildT0RowsHTML(rows, true);
@@ -2516,11 +2590,11 @@
           const arr = (bt.daily || []).filter(r => r.status === stat);
           if (!arr.length) return null;
           const avg = arr.reduce((a, r) => a + (typeof r.net_pct === 'number' ? r.net_pct : 0), 0) / arr.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
+          return fmtSignedPct2(avg);
         };
         const buyOnlyRows = (bt.daily || []).filter(r => String(r.status).indexOf('仅买') === 0);
         const buyOnlyPosPct = buyOnlyRows.length
-          ? Math.round(buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100)
+          ? buyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / buyOnlyRows.length * 100
           : null;
         document.getElementById('kcbt0StatusDist').innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: s.both_days, color: 'var(--pos)', avg: statAvg('双边成交') },
@@ -2639,11 +2713,11 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
+          return fmtSignedPct2(avg);
         };
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
-          ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
+          ? dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100
           : null;
         statsEl.innerHTML = buildT0StatusHTML([
           { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
@@ -2668,7 +2742,9 @@
         if (wrap) wrap.style.display = 'none';
         return;
       }
-      const rows = [...bt.daily].reverse();
+      const sel = document.getElementById('kcbt0HistoryFilter');
+      const flt = sel ? sel.value : 'all';
+      const rows = [...bt.daily].reverse().filter(r => t0StatusMatch(r.status, flt));
       const total = rows.length;
       if (total <= KCB_T0_HISTORY_PREVIEW) {
         body.innerHTML = buildT0RowsHTML(rows, true);
@@ -2754,7 +2830,7 @@
 
     // 生成每日明细行 HTML（每日记录与历史每日明细共用；showTime=true 时输出买卖时间列）
     // adjCtx 为可选参数：{ adjustments, saveFn, recoverStatus, stId }，默认红利做T上下文；创业板传自己的录入存储（stId 前缀避免两模块同名 id 冲突）
-    function buildT0RowsHTML(records, showTime, showAdjust, adjCtx) {
+    function buildT0RowsHTML(records, showTime, showAdjust, adjCtx, showBench) {
       const ctx = adjCtx || { adjustments: t0Adjustments, saveFn: 'saveT0Adjust', recoverStatus: '仅买14:50卖出', stId: 't0AdjSt_' };
       return records.map(r => {
         const isFull = r.status === '全仓';
@@ -2794,9 +2870,25 @@
             <span class="t0-adjust-save" id="${ctx.stId}${r.date}"></span>
           </td>`;
         }
+        // 全仓行展示触发信号值（sig_mom10 = T-1日收盘mom10），并加 tooltip 说明 T+1 机制
+        const fullTip = (isFull && r.mom10 != null)
+          ? `title="T-1日收盘 mom10 ${((r.sig_mom10 != null ? r.sig_mom10 : r.mom10) * 100).toFixed(1)}% &gt;5% 触发今日满仓（信号T+1生效，今日不动用做T）"`
+          : '';
+        const statusCell = (isFull && r.mom10 != null)
+          ? `<span class="t0-status-tag ${statusCls}" ${fullTip}>全仓(mom10 ${((r.sig_mom10 != null ? r.sig_mom10 : r.mom10) * 100).toFixed(1)}%)</span>`
+          : `<span class="t0-status-tag ${statusCls}">${r.status}</span>`;
+        // 当日基准指数涨跌（仅红利做T每日记录开启；数据来自 t0_bench.json）
+        let benchCells = '';
+        if (showBench) {
+          const b = (t0Bench && t0Bench.records) ? t0Bench.records[r.date] : null;
+          const fmtB = v => (v === null || v === undefined) ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+          const clsB = v => (v === null || v === undefined || v === 0) ? 'gray' : (v > 0 ? 'pl' : 'mn');
+          const sp = b ? b.sh_pct : null, cp = b ? b.cyb_pct : null;
+          benchCells = `<td class="${clsB(sp)}">${fmtB(sp)}</td><td class="${clsB(cp)}">${fmtB(cp)}</td>`;
+        }
         return `<tr>
           <td>${fmtDate(r.date)}</td>
-          <td><span class="t0-status-tag ${statusCls}">${isFull && r.mom10 != null ? '全仓(mom10 ' + (r.mom10 * 100).toFixed(1) + '%)' : r.status}</span></td>
+          <td>${statusCell}</td>
           ${timeCells}
           <td>${Number(r.open).toFixed(3)}</td>
           <td>${r.close ? Number(r.close).toFixed(3) : '—'}</td>
@@ -2807,8 +2899,16 @@
           <td>${trade}</td>
           <td class="${netCls}">${fmtPct(dayNet)}</td>
           <td class="${exCls}">${fmtPct(dayEx)}</td>
+          ${benchCells}
         </tr>`;
       }).join('');
+    }
+
+    // 带符号百分比格式化：保留两位小数；四舍五入后为 0 时不带负号（避免出现 -0.00%）
+    function fmtSignedPct2(v) {
+      const r = Math.round(v * 100) / 100;
+      if (Math.abs(r) < 0.005) return '0.00%';
+      return (r > 0 ? '+' : '') + r.toFixed(2) + '%';
     }
 
     // 每日状态分布 HTML（堆叠比例条 + 图例 + 合计100%）
@@ -2817,11 +2917,11 @@
       if (total <= 0) return '<div class="gray" style="font-size:12px;">暂无数据</div>';
       const segs = items.map(i => {
         const p = total ? i.count / total * 100 : 0;
-        return `<div style="width:${p.toFixed(2)}%;background:${i.color};" title="${i.label} ${i.count}天（${p.toFixed(1)}%）"></div>`;
+        return `<div style="width:${p.toFixed(2)}%;background:${i.color};" title="${i.label} ${i.count}天（${p.toFixed(2)}%）"></div>`;
       }).join('');
       const legend = items.map(i => {
         const p = total ? i.count / total * 100 : 0;
-        return `<span><i style="background:${i.color}"></i>${i.label} ${i.count}天（${p.toFixed(1)}%）${i.avg ? ' · 均' + i.avg : ''}${i.posPct != null ? ' · 正' + i.posPct + '%' : ''}</span>`;
+        return `<span><i style="background:${i.color}"></i>${i.label} ${i.count}天（${p.toFixed(2)}%）${i.avg ? ' · 均' + i.avg : ''}${i.posPct != null ? ' · 正' + Number(i.posPct).toFixed(2) + '%' : ''}</span>`;
       }).join('');
       return `<div class="t0-status-bar">${segs}</div><div class="t0-status-legend">${legend}<b>合计 ${total} 天 = 100%</b></div>`;
     }
@@ -2859,12 +2959,14 @@
       const body = document.getElementById('t0DailyBody');
       const cards = document.getElementById('t0DailyCards');
       const statsEl = document.getElementById('t0DailyStats');
+      const benchEl = document.getElementById('t0BenchCards');
       if (!body) return;
       if (!daily || !daily.records || daily.records.length === 0) {
         if (meta) meta.textContent = '';
         if (statsEl) statsEl.textContent = '';
         if (cards) cards.innerHTML = '';
-        body.innerHTML = '<tr><td colspan="11" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
+        if (benchEl) benchEl.innerHTML = '';
+        body.innerHTML = '<tr><td colspan="13" class="gray" style="text-align:center;padding:18px;">暂无记录 · 今日 16:00 收盘后自动生成</td></tr>';
         return;
       }
       const records = daily.records.map(applyT0AdjustToRecord);
@@ -2907,18 +3009,18 @@
           const vals = arr.map(r => r.net_pct).filter(v => typeof v === 'number');
           if (!vals.length) return null;
           const avg = vals.reduce((a, v) => a + v, 0) / vals.length / 2; // ÷2：100万总资金基准
-          return (avg >= 0 ? '+' : '') + avg.toFixed(1) + '%';
+          return fmtSignedPct2(avg);
         };
         // 仅买（前缀匹配）：正收益天数占比（做T净利>0 的天数 / 总天数）
         const dBuyOnlyRows = records.filter(r => String(r.status).indexOf('仅买') === 0);
         const dBuyOnlyPosPct = dBuyOnlyRows.length
-          ? Math.round(dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100)
+          ? dBuyOnlyRows.filter(r => typeof r.net_pct === 'number' && r.net_pct > 0).length / dBuyOnlyRows.length * 100
           : null;
         // 全仓(mom10)：平均当日持有收益%
         const dFullRows = records.filter(r => r.status === '全仓');
         const dFullAvg = dFullRows.length ? dFullRows.reduce((a, r) => a + (typeof r.hold_pct === 'number' ? r.hold_pct : 0), 0) / dFullRows.length : null;
         statsEl.innerHTML = buildT0StatusHTML([
-          { label: '全仓(mom10)', count: full, color: '#9b59b6', avg: dFullAvg != null ? (dFullAvg >= 0 ? '+' : '') + dFullAvg.toFixed(1) + '%' : null },
+          { label: '全仓(mom10)', count: full, color: '#9b59b6', avg: dFullAvg != null ? fmtSignedPct2(dFullAvg) : null },
           { label: '双边成交', count: both, color: 'var(--pos)', avg: statAvg('双边成交') },
           { label: '仅买14:50卖出', count: recover, color: '#e67e22', avg: statAvg('仅买14:50卖出'), posPct: dBuyOnlyPosPct },
           { label: '未触发买入', count: untrig, color: '#95a5a6', avg: statAvg('未触发') },
@@ -2926,7 +3028,71 @@
           { label: '待收盘', count: pend, color: '#f1c40f', avg: statAvg('待收盘') }
         ]);
       }
-      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, true); // 最新在上（含买卖时间）+ 实际卖出价录入列
+      // 同期对标指数（紧凑清单 + 双向条形；分组：标的自身 / A股风格 / 无风险对照 / 港股 / 美股 / 黄金）
+      const benchTitleEl = document.getElementById('t0BenchTitle');
+      if (benchEl) {
+        const p = t0Bench && t0Bench.period;
+        const items = (p && Array.isArray(p.items)) ? p.items : null;
+        if (items && items.length) {
+          const fmtB = v => (v === null || v === undefined) ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+          const dirOf = v => (v === null || v === undefined || v === 0) ? 'flat' : (v > 0 ? 'up' : 'dn');
+          const range = p.start.slice(5) + '~' + p.end.slice(5);
+          if (benchTitleEl) benchTitleEl.textContent = `同期涨跌对标（${range}，基准 ${p.base_date.slice(5)} 收盘）`;
+          const latestDate = records[records.length - 1].date;
+          const todayRec = (t0Bench && t0Bench.records) ? t0Bench.records[latestDate] : null;
+          // 双向条：以中线为 0，向右为涨、向左为跌，半幅按最大绝对值等比缩放
+          const maxAbs = items.reduce((m, it) => Math.max(m, Math.abs(it.pct || 0)), 0.01);
+          const barHtml = v => {
+            if (v === null || v === undefined || v === 0) return '';
+            const w = Math.min(Math.abs(v) / maxAbs * 50, 50).toFixed(2);
+            return v > 0
+              ? `<span class="bfill up" style="left:50%;width:${w}%"></span>`
+              : `<span class="bfill dn" style="right:50%;width:${w}%"></span>`;
+          };
+          const order = [];
+          const byGroup = {};
+          for (const it of items) {
+            if (!byGroup[it.group]) { byGroup[it.group] = []; order.push(it.group); }
+            byGroup[it.group].push(it);
+          }
+          const head = `<div class="t0-bench-row t0-bench-head"><span class="bn">标的</span><span class="bbar"></span><span class="bsyn">同期</span><span class="bday">当日</span></div>`;
+          benchEl.innerHTML = head + order.map(g => {
+            const arr = byGroup[g];
+            // 组内全部为隔夜市场（美股）时，在组标题标注，避免与A股当日混读
+            const overnight = arr.every(it => it.overnight);
+            const rows = arr.map(it => {
+              const d = todayRec ? todayRec[it.key + '_pct'] : null;
+              return `<div class="t0-bench-row">
+                <span class="bn" title="${it.name}">${it.name}</span>
+                <span class="bbar">${barHtml(it.pct)}</span>
+                <span class="bsyn ${dirOf(it.pct)}">${fmtB(it.pct)}</span>
+                <span class="bday">${fmtB(d)}</span>
+              </div>`;
+            }).join('');
+            return `<div class="t0-bench-block g-${arr[0].gkey}">
+              <div class="t0-bench-group-title">${g}${overnight ? '<em>（隔夜收盘）</em>' : ''}</div>
+              ${rows}
+            </div>`;
+          }).join('');
+        } else {
+          benchEl.innerHTML = '';
+          if (benchTitleEl) benchTitleEl.textContent = '同期涨跌对标';
+        }
+      }
+      body.innerHTML = buildT0RowsHTML([...records].reverse(), true, true, undefined, true); // 最新在上（含买卖时间）+ 实际卖出价录入列 + 当日基准指数
+    }
+
+    // 历史业绩明细按状态筛选（all=全部；buyonly 用前缀匹配以兼容 仅买14:50/13:50/14:00 等）
+    function t0StatusMatch(status, flt) {
+      if (flt === 'all') return true;
+      const s = String(status || '');
+      if (flt === 'buyonly') return s.indexOf('仅买') === 0;
+      if (flt === 'both') return s === '双边成交';
+      if (flt === 'untrig') return s === '未触发' || s === '未触发买入';
+      if (flt === 'skip') return s === '跳过';
+      if (flt === 'pending') return s === '待收盘';
+      if (flt === 'full') return s === '全仓';
+      return true;
     }
 
     // 渲染历史业绩全周期每日明细（默认只显示最近 20 条，按钮展开全部，避免手机端下拉过长）
@@ -2942,7 +3108,9 @@
         if (wrap) wrap.style.display = 'none';
         return;
       }
-      const rows = [...bt.daily].reverse();
+      const sel = document.getElementById('t0HistoryFilter');
+      const flt = sel ? sel.value : 'all';
+      const rows = [...bt.daily].reverse().filter(r => t0StatusMatch(r.status, flt));
       const total = rows.length;
       // 无数据/总数不超过预览数 → 不显示按钮，全量渲染
       if (total <= T0_HISTORY_PREVIEW) {
@@ -3060,6 +3228,7 @@
         cybData = data;
         kcbData = data.kcb;
         t0Data = data.t0;
+        t0Bench = (t0Data && t0Data.bench) ? t0Data.bench : null;
         cybT0Data = data.t0_cyb;
         kcbT0Data = data.t0_kcb;
         delete cybData.kcb;

@@ -42,6 +42,8 @@ const DATA_FILES = [
   't0/t0_backtest.json',
   't0/t0_signal.json',
   't0/t0_daily.json',
+  // 基准指数（上证指数/创业板指）日涨跌，每日记录展示用
+  't0/t0_bench.json',
   // mom10 动态策略（2020 起：动量信号 + 三策略回测 + 日线）
   't0/mom10_daily.json',
   't0/mom10_signal.json',
@@ -57,6 +59,15 @@ const DATA_FILES = [
   't0/t0_signal_kcb.json',
   't0/t0_daily_kcb.json'
 ];
+
+// 只读大文件（CI 里仅下载用于回测，不会被任何脚本修改）：
+// OSS 已存在同大小对象时跳过回传，避免 GitHub runner 上传 10MB+ 文件失败/超时
+// （2026-09-22 起生产故障根因：这三个大文件 put 失败 → 上传步骤 exit 1 → 前端部署被跳过）
+const READONLY_LARGE = new Set([
+  't0/515180_1min_2025_2026.json',
+  't0/159915_5min_merged.json',
+  't0/588000_5min_pytdx.json'
+]);
 
 const DATA_DIR = path.join(__dirname, 'data');
 
@@ -146,8 +157,19 @@ async function upload() {
       const content = fs.readFileSync(localPath);
       // 验证 JSON 合法性，防止上传损坏文件
       JSON.parse(content.toString());
+      // 只读大文件：OSS 已存在同大小对象则跳过回传（防超时；内容变化时仍会正常上传）
+      if (READONLY_LARGE.has(fname)) {
+        try {
+          const head = await client.head(ossKey);
+          if (Number(head.res.headers['content-length']) === content.length) {
+            console.log(`  - ${fname} (只读大文件，OSS 已是最新，跳过回传)`);
+            continue;
+          }
+        } catch (e) { /* OSS 对象不存在等情况 → 继续正常上传 */ }
+      }
       await client.put(ossKey, content, {
-        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        timeout: 300000
       });
       const json = JSON.parse(content.toString());
       const recCount = (json.daily_records || []).length;

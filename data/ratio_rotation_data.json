@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.1",
     "created_at": "2026-08-01 21:34:48",
-    "last_updated": "2026-08-29 11:32:55",
-    "record_count": 2956
+    "last_updated": "2026-09-28 16:00:58",
+    "record_count": 2975
   },
   "state": {
     "current_weight": 0,
@@ -62159,6 +62159,424 @@
       "data_ok": 1,
       "created_at": "2026-08-29 11:32:55",
       "percentile": 0.8531799729364006
+    },
+    {
+      "date": "2026-09-01",
+      "ratio": 0.5934,
+      "cyb_open": 3435.32,
+      "cyb_close": 3393.43,
+      "hli_open": 5701.79,
+      "hli_close": 5719.05,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.005011938925791437,
+      "cyb_ret": -0.009043920102791758,
+      "hli_ret": 0.004837020690430682,
+      "asset_value": 23870724.892432448,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-01 16:00:56",
+      "percentile": 0.8292188028407169
+    },
+    {
+      "date": "2026-09-02",
+      "ratio": 0.5878,
+      "cyb_open": 3347.68,
+      "cyb_close": 3312.24,
+      "hli_open": 5738.08,
+      "hli_close": 5634.58,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.014594751403794737,
+      "cyb_ret": -0.023925644554329994,
+      "hli_ret": -0.014769935566221748,
+      "asset_value": 23522337.59679902,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-02 16:00:58",
+      "percentile": 0.8056118999323868
+    },
+    {
+      "date": "2026-09-03",
+      "ratio": 0.5878,
+      "cyb_open": 3342.09,
+      "cyb_close": 3312.54,
+      "hli_open": 5631.89,
+      "hli_close": 5635.06,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.00025970806573294425,
+      "cyb_ret": 0.00009057314687344054,
+      "hli_ret": 0.00008518824828129823,
+      "asset_value": 23528446.5375978,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-03 16:00:58",
+      "percentile": 0.805677593781683
+    },
+    {
+      "date": "2026-09-04",
+      "ratio": 0.5819,
+      "cyb_open": 3344.62,
+      "cyb_close": 3286.55,
+      "hli_open": 5638.06,
+      "hli_close": 5648.28,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.0025207226142407446,
+      "cyb_ret": -0.00784594299238639,
+      "hli_ret": 0.0023460264841899114,
+      "asset_value": 23587755.22486308,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-04 16:01:10",
+      "percentile": 0.779054054054054
+    },
+    {
+      "date": "2026-09-07",
+      "ratio": 0.6091,
+      "cyb_open": 3326.42,
+      "cyb_close": 3398.68,
+      "hli_open": 5642.48,
+      "hli_close": 5580.21,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.01187703249119465,
+      "cyb_ret": 0.034117843939693415,
+      "hli_ret": -0.012051456372559333,
+      "asset_value": 23307602.689663034,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-07 16:00:54",
+      "percentile": 0.867274569402229
+    },
+    {
+      "date": "2026-09-08",
+      "ratio": 0.5943,
+      "cyb_open": 3394.35,
+      "cyb_close": 3359.72,
+      "hli_open": 5588.65,
+      "hli_close": 5652.8,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.013183338267152678,
+      "cyb_ret": -0.01146327397695579,
+      "hli_ret": 0.013008471007363465,
+      "asset_value": 23614874.70011726,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-08 16:00:57",
+      "percentile": 0.8311951384199865
+    },
+    {
+      "date": "2026-09-09",
+      "ratio": 0.5869,
+      "cyb_open": 3398.22,
+      "cyb_close": 3354.97,
+      "hli_open": 5647.96,
+      "hli_close": 5716,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.011354753705425935,
+      "cyb_ret": -0.0014138082935483132,
+      "hli_ret": 0.011180300028304613,
+      "asset_value": 23883015.786121584,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-09 16:00:56",
+      "percentile": 0.8005399932500844
+    },
+    {
+      "date": "2026-09-10",
+      "ratio": 0.5881,
+      "cyb_open": 3324.33,
+      "cyb_close": 3338.42,
+      "hli_open": 5714.53,
+      "hli_close": 5677.09,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.006632649566241322,
+      "cyb_ret": -0.004932980026646994,
+      "hli_ret": -0.0068072078376486544,
+      "asset_value": 23724608.111827232,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-10 16:00:53",
+      "percentile": 0.8066801619433198
+    },
+    {
+      "date": "2026-09-11",
+      "ratio": 0.5953,
+      "cyb_open": 3310.01,
+      "cyb_close": 3322.04,
+      "hli_open": 5665.33,
+      "hli_close": 5580.28,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.016878509129998998,
+      "cyb_ret": -0.004906512661678297,
+      "hli_ret": -0.017052750616953438,
+      "asset_value": 23324172.09720611,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-11 16:00:54",
+      "percentile": 0.8350758853288365
+    },
+    {
+      "date": "2026-09-14",
+      "ratio": 0.59,
+      "cyb_open": 3279.31,
+      "cyb_close": 3285.58,
+      "hli_open": 5572.52,
+      "hli_close": 5568.76,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.00189005216896998,
+      "cyb_ret": -0.01097518392313157,
+      "hli_ret": -0.002064412538438809,
+      "asset_value": 23280088.195144355,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-14 16:01:01",
+      "percentile": 0.813216453135536
+    },
+    {
+      "date": "2026-09-15",
+      "ratio": 0.5869,
+      "cyb_open": 3280.85,
+      "cyb_close": 3247.92,
+      "hli_open": 5568.76,
+      "hli_close": 5534.25,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.006022467627514461,
+      "cyb_ret": -0.01146220758587524,
+      "hli_ret": -0.006197070802117621,
+      "asset_value": 23139884.61762342,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-15 16:00:56",
+      "percentile": 0.7997977755308392
+    },
+    {
+      "date": "2026-09-16",
+      "ratio": 0.6017,
+      "cyb_open": 3246.89,
+      "cyb_close": 3311.47,
+      "hli_open": 5532.22,
+      "hli_close": 5503.7,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.005345630722391914,
+      "cyb_ret": 0.019566368629769126,
+      "hli_ret": -0.005520169851380041,
+      "asset_value": 23016187.339498848,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-16 16:00:58",
+      "percentile": 0.8534366576819407
+    },
+    {
+      "date": "2026-09-17",
+      "ratio": 0.6026,
+      "cyb_open": 3297.31,
+      "cyb_close": 3298.31,
+      "hli_open": 5486.76,
+      "hli_close": 5473.85,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.005249558349058603,
+      "cyb_ret": -0.003974065898226464,
+      "hli_ret": -0.00542362410741859,
+      "asset_value": 22895362.521087285,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-17 16:00:51",
+      "percentile": 0.855506904681711
+    },
+    {
+      "date": "2026-09-18",
+      "ratio": 0.6175,
+      "cyb_open": 3351.56,
+      "cyb_close": 3372.68,
+      "hli_open": 5462.98,
+      "hli_close": 5461.76,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.002034426655682209,
+      "cyb_ret": 0.02254791089982433,
+      "hli_ret": -0.002208683102386866,
+      "asset_value": 22848783.585282877,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-18 16:00:53",
+      "percentile": 0.8848484848484849
+    },
+    {
+      "date": "2026-09-21",
+      "ratio": 0.615,
+      "cyb_open": 3403.9,
+      "cyb_close": 3399.59,
+      "hli_open": 5454.59,
+      "hli_close": 5527.38,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.012188816192977958,
+      "cyb_ret": 0.007978818031950885,
+      "hli_ret": 0.012014442231075728,
+      "asset_value": 23127283.20863702,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-21 16:00:55",
+      "percentile": 0.8778189161898351
+    },
+    {
+      "date": "2026-09-22",
+      "ratio": 0.615,
+      "cyb_open": 3446.33,
+      "cyb_close": 3399.93,
+      "hli_open": 5510.96,
+      "hli_close": 5527.97,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": 0.0002808258363113936,
+      "cyb_ret": 0.00010001206027787646,
+      "hli_ret": 0.00010674134942778579,
+      "asset_value": 23133777.947285697,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-22 16:00:57",
+      "percentile": 0.8778600269179004
+    },
+    {
+      "date": "2026-09-23",
+      "ratio": 0.6163,
+      "cyb_open": 3412.53,
+      "cyb_close": 3379.61,
+      "hli_open": 5515.56,
+      "hli_close": 5484.03,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.0077744571179448885,
+      "cyb_ret": -0.005976593635751204,
+      "hli_ret": -0.007948668317664609,
+      "asset_value": 22953925.382658467,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-23 16:00:57",
+      "percentile": 0.8816010763538513
+    },
+    {
+      "date": "2026-09-24",
+      "ratio": 0.6013,
+      "cyb_open": 3366.89,
+      "cyb_close": 3288.95,
+      "hli_open": 5475.63,
+      "hli_close": 5469.4,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "EMPTY",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.0024934104333943496,
+      "cyb_ret": -0.02682558046638528,
+      "hli_ret": -0.002667746164773055,
+      "asset_value": 22896691.825621992,
+      "signal_note": "卖出区但已清仓",
+      "data_ok": 1,
+      "created_at": "2026-09-24 16:00:58",
+      "percentile": 0.8510423671822461
+    },
+    {
+      "date": "2026-09-28",
+      "ratio": 0.5772,
+      "cyb_open": 3267.6,
+      "cyb_close": 3139.82,
+      "hli_open": 5458.98,
+      "hli_close": 5439.6,
+      "cyb_weight": 0,
+      "hli_weight": 1,
+      "action": "HOLD",
+      "action_tiers": 0,
+      "action_amount": 0,
+      "exec_date": null,
+      "daily_ret": -0.005274224734322597,
+      "cyb_ret": -0.0453427385639793,
+      "hli_ret": -0.005448495264562703,
+      "asset_value": 22775929.527261134,
+      "signal_note": "滞回带内不操作",
+      "data_ok": 1,
+      "created_at": "2026-09-28 16:00:58",
+      "percentile": 0.7515966386554622
     }
   ],
   "yearly_stats": [
@@ -62176,7 +62594,7 @@
       "hli_bh_ret": 0.5407065571866372,
       "cyb_bh_ret": 0.042520697920857664,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2015,
@@ -62192,7 +62610,7 @@
       "hli_bh_ret": 0.2213264625339515,
       "cyb_bh_ret": 0.8528783279877987,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2016,
@@ -62208,7 +62626,7 @@
       "hli_bh_ret": -0.006087842026033852,
       "cyb_bh_ret": -0.2124167081453412,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2017,
@@ -62224,7 +62642,7 @@
       "hli_bh_ret": 0.16389583027095878,
       "cyb_bh_ret": -0.10727236146094121,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2018,
@@ -62240,7 +62658,7 @@
       "hli_bh_ret": -0.20661568873964042,
       "cyb_bh_ret": -0.2933577521710238,
       "summary": "8次买入 仓位0%→65%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2019,
@@ -62256,7 +62674,7 @@
       "hli_bh_ret": 0.17499239267050348,
       "cyb_bh_ret": 0.4633514734689326,
       "summary": "5次买入 仓位65%→100%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2020,
@@ -62272,7 +62690,7 @@
       "hli_bh_ret": 0.020541450426262875,
       "cyb_bh_ret": 0.6184798515011933,
       "summary": "5次卖出 仓位100%→65%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2021,
@@ -62288,7 +62706,7 @@
       "hli_bh_ret": 0.12980909980027344,
       "cyb_bh_ret": 0.07945197557852857,
       "summary": "6次卖出 仓位60%→0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2022,
@@ -62304,7 +62722,7 @@
       "hli_bh_ret": -0.06579097095259423,
       "cyb_bh_ret": -0.27795317090640803,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2023,
@@ -62320,7 +62738,7 @@
       "hli_bh_ret": 0.0023982508300086636,
       "cyb_bh_ret": -0.19735752139682838,
       "summary": "无调仓 仓位0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2024,
@@ -62336,7 +62754,7 @@
       "hli_bh_ret": 0.11163336314153183,
       "cyb_bh_ret": 0.15392564989261404,
       "summary": "8次买入 仓位0%→100%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2025,
@@ -62352,23 +62770,23 @@
       "hli_bh_ret": 0.0061771163341675095,
       "cyb_bh_ret": 0.5546043033485049,
       "summary": "无调仓 仓位100%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     },
     {
       "year": 2026,
-      "annual_ret": 0.21858498825587325,
+      "annual_ret": 0.1685237598798628,
       "max_drawdown": -0.11350707760211755,
       "asset_start": 19491199.33137068,
-      "asset_end": 23751682.908311225,
-      "avg_weight": 0.42724358974358995,
+      "asset_end": 22775929.527261134,
+      "avg_weight": 0.38085714285714306,
       "buy_count": 0,
       "sell_count": 12,
-      "cyb_ret": 0.03941326147326296,
-      "hli_ret": 0.030116992934090314,
-      "hli_bh_ret": 0.030116992934090314,
-      "cyb_bh_ret": 0.03941326147326296,
+      "cyb_ret": -0.046965732204479416,
+      "hli_ret": -0.015478396849299081,
+      "hli_bh_ret": -0.015478396849299081,
+      "cyb_bh_ret": -0.046965732204479416,
       "summary": "12次卖出 仓位100%→0%",
-      "updated_at": "2026-08-29 11:32:55"
+      "updated_at": "2026-09-28 16:00:58"
     }
   ],
   "trade_log": [
@@ -63796,6 +64214,671 @@
       "result": 1,
       "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
       "created_at": "2026-08-29 11:32:55"
+    },
+    {
+      "check_time": "2026-09-01 16:00:56",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-01 16:00:56"
+    },
+    {
+      "check_time": "2026-09-01 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-01 16:00:56"
+    },
+    {
+      "check_time": "2026-09-01 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-01 16:00:56"
+    },
+    {
+      "check_time": "2026-09-01 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-01 16:00:56"
+    },
+    {
+      "check_time": "2026-09-01 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-01 16:00:56"
+    },
+    {
+      "check_time": "2026-09-02 16:00:58",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-02 16:00:58"
+    },
+    {
+      "check_time": "2026-09-02 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-02 16:00:58"
+    },
+    {
+      "check_time": "2026-09-02 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-02 16:00:58"
+    },
+    {
+      "check_time": "2026-09-02 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-02 16:00:58"
+    },
+    {
+      "check_time": "2026-09-02 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-02 16:00:58"
+    },
+    {
+      "check_time": "2026-09-03 16:00:58",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-03 16:00:58"
+    },
+    {
+      "check_time": "2026-09-03 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-03 16:00:58"
+    },
+    {
+      "check_time": "2026-09-03 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-03 16:00:58"
+    },
+    {
+      "check_time": "2026-09-03 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-03 16:00:58"
+    },
+    {
+      "check_time": "2026-09-03 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-03 16:00:58"
+    },
+    {
+      "check_time": "2026-09-04 16:01:10",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-04 16:01:10"
+    },
+    {
+      "check_time": "2026-09-04 16:01:10",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-04 16:01:10"
+    },
+    {
+      "check_time": "2026-09-04 16:01:10",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-04 16:01:10"
+    },
+    {
+      "check_time": "2026-09-04 16:01:10",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-04 16:01:10"
+    },
+    {
+      "check_time": "2026-09-04 16:01:10",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-04 16:01:10"
+    },
+    {
+      "check_time": "2026-09-07 16:00:54",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-07 16:00:54"
+    },
+    {
+      "check_time": "2026-09-07 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-07 16:00:54"
+    },
+    {
+      "check_time": "2026-09-07 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-07 16:00:54"
+    },
+    {
+      "check_time": "2026-09-07 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-07 16:00:54"
+    },
+    {
+      "check_time": "2026-09-07 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-07 16:00:54"
+    },
+    {
+      "check_time": "2026-09-08 16:00:57",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-08 16:00:57"
+    },
+    {
+      "check_time": "2026-09-08 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-08 16:00:57"
+    },
+    {
+      "check_time": "2026-09-08 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-08 16:00:57"
+    },
+    {
+      "check_time": "2026-09-08 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-08 16:00:57"
+    },
+    {
+      "check_time": "2026-09-08 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-08 16:00:57"
+    },
+    {
+      "check_time": "2026-09-09 16:00:56",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-09 16:00:56"
+    },
+    {
+      "check_time": "2026-09-09 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-09 16:00:56"
+    },
+    {
+      "check_time": "2026-09-09 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-09 16:00:56"
+    },
+    {
+      "check_time": "2026-09-09 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-09 16:00:56"
+    },
+    {
+      "check_time": "2026-09-09 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-09 16:00:56"
+    },
+    {
+      "check_time": "2026-09-10 16:00:53",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-10 16:00:53"
+    },
+    {
+      "check_time": "2026-09-10 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-10 16:00:53"
+    },
+    {
+      "check_time": "2026-09-10 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-10 16:00:53"
+    },
+    {
+      "check_time": "2026-09-10 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-10 16:00:53"
+    },
+    {
+      "check_time": "2026-09-10 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-10 16:00:53"
+    },
+    {
+      "check_time": "2026-09-11 16:00:54",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-11 16:00:54"
+    },
+    {
+      "check_time": "2026-09-11 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-11 16:00:54"
+    },
+    {
+      "check_time": "2026-09-11 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-11 16:00:54"
+    },
+    {
+      "check_time": "2026-09-11 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-11 16:00:54"
+    },
+    {
+      "check_time": "2026-09-11 16:00:54",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-11 16:00:54"
+    },
+    {
+      "check_time": "2026-09-14 16:01:01",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-14 16:01:01"
+    },
+    {
+      "check_time": "2026-09-14 16:01:01",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-14 16:01:01"
+    },
+    {
+      "check_time": "2026-09-14 16:01:01",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-14 16:01:01"
+    },
+    {
+      "check_time": "2026-09-14 16:01:01",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-14 16:01:01"
+    },
+    {
+      "check_time": "2026-09-14 16:01:01",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-14 16:01:01"
+    },
+    {
+      "check_time": "2026-09-15 16:00:56",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-15 16:00:56"
+    },
+    {
+      "check_time": "2026-09-15 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-15 16:00:56"
+    },
+    {
+      "check_time": "2026-09-15 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-15 16:00:56"
+    },
+    {
+      "check_time": "2026-09-15 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-15 16:00:56"
+    },
+    {
+      "check_time": "2026-09-15 16:00:56",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-15 16:00:56"
+    },
+    {
+      "check_time": "2026-09-16 16:00:58",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-16 16:00:58"
+    },
+    {
+      "check_time": "2026-09-16 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-16 16:00:58"
+    },
+    {
+      "check_time": "2026-09-16 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-16 16:00:58"
+    },
+    {
+      "check_time": "2026-09-16 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-16 16:00:58"
+    },
+    {
+      "check_time": "2026-09-16 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-16 16:00:58"
+    },
+    {
+      "check_time": "2026-09-17 16:00:51",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-17 16:00:51"
+    },
+    {
+      "check_time": "2026-09-17 16:00:51",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-17 16:00:51"
+    },
+    {
+      "check_time": "2026-09-17 16:00:51",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-17 16:00:51"
+    },
+    {
+      "check_time": "2026-09-17 16:00:51",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-17 16:00:51"
+    },
+    {
+      "check_time": "2026-09-17 16:00:51",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-17 16:00:51"
+    },
+    {
+      "check_time": "2026-09-18 16:00:53",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-18 16:00:53"
+    },
+    {
+      "check_time": "2026-09-18 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-18 16:00:53"
+    },
+    {
+      "check_time": "2026-09-18 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-18 16:00:53"
+    },
+    {
+      "check_time": "2026-09-18 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-18 16:00:53"
+    },
+    {
+      "check_time": "2026-09-18 16:00:53",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-18 16:00:53"
+    },
+    {
+      "check_time": "2026-09-21 16:00:55",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-21 16:00:55"
+    },
+    {
+      "check_time": "2026-09-21 16:00:55",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-21 16:00:55"
+    },
+    {
+      "check_time": "2026-09-21 16:00:55",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-21 16:00:55"
+    },
+    {
+      "check_time": "2026-09-21 16:00:55",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-21 16:00:55"
+    },
+    {
+      "check_time": "2026-09-21 16:00:55",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-21 16:00:55"
+    },
+    {
+      "check_time": "2026-09-22 16:00:57",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-22 16:00:57"
+    },
+    {
+      "check_time": "2026-09-22 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-22 16:00:57"
+    },
+    {
+      "check_time": "2026-09-22 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-22 16:00:57"
+    },
+    {
+      "check_time": "2026-09-22 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-22 16:00:57"
+    },
+    {
+      "check_time": "2026-09-22 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-22 16:00:57"
+    },
+    {
+      "check_time": "2026-09-23 16:00:57",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-23 16:00:57"
+    },
+    {
+      "check_time": "2026-09-23 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-23 16:00:57"
+    },
+    {
+      "check_time": "2026-09-23 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-23 16:00:57"
+    },
+    {
+      "check_time": "2026-09-23 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-23 16:00:57"
+    },
+    {
+      "check_time": "2026-09-23 16:00:57",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-23 16:00:57"
+    },
+    {
+      "check_time": "2026-09-24 16:00:58",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-24 16:00:58"
+    },
+    {
+      "check_time": "2026-09-24 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-24 16:00:58"
+    },
+    {
+      "check_time": "2026-09-24 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-24 16:00:58"
+    },
+    {
+      "check_time": "2026-09-24 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-24 16:00:58"
+    },
+    {
+      "check_time": "2026-09-24 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-24 16:00:58"
+    },
+    {
+      "check_time": "2026-09-28 16:00:58",
+      "check_type": "identity3",
+      "result": 1,
+      "detail": "2026-03-09: 恒等式3偏差 0.000129 > 0.0001",
+      "created_at": "2026-09-28 16:00:58"
+    },
+    {
+      "check_time": "2026-09-28 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式1偏差 445523.5304元 > 0.01元",
+      "created_at": "2026-09-28 16:00:58"
+    },
+    {
+      "check_time": "2026-09-28 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-04: 恒等式2偏差 445523.5304元",
+      "created_at": "2026-09-28 16:00:58"
+    },
+    {
+      "check_time": "2026-09-28 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式1偏差 114931.9166元 > 0.01元",
+      "created_at": "2026-09-28 16:00:58"
+    },
+    {
+      "check_time": "2026-09-28 16:00:58",
+      "check_type": "daily_asset",
+      "result": 1,
+      "detail": "2026-08-10: 恒等式2偏差 114931.9166元",
+      "created_at": "2026-09-28 16:00:58"
     }
   ]
 }

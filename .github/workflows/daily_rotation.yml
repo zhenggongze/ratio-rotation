@@ -92,6 +92,11 @@ jobs:
         run: |
           node t0_cyb_daily.cjs
 
+      - name: 更新基准指数数据（上证指数/创业板指 日涨跌 → t0_bench.json）
+        if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
+        run: |
+          node t0_bench.cjs
+
       - name: 更新 mom10 动态策略数据（动量信号 + 三策略回测 + 每日记录全仓标记）
         if: ${{ steps.check_td.outputs.is_td == 'true' && ! inputs.skip_pipeline }}
         run: |
