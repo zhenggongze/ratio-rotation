@@ -648,6 +648,11 @@
     .t0-daily-stats { margin-top: 8px; font-size: 12px; color: var(--text-light); }
     .t0-daily-stats b { color: var(--pos); font-weight: 600; }
     .t0-daily-subtitle { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+    /* 同期对标：折叠开关（默认收起，点击展开；标题文本由 JS 填充区间与基准日） */
+    .t0-bench-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin: 16px 0 6px; padding: 10px 12px; background: #f8f9fb; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
+    .t0-bench-toggle:active { background: #eef2f7; }
+    .t0-bench-toggle-arrow { flex: 0 0 auto; font-size: 12px; color: var(--text-light); transition: transform 0.2s; }
+    .t0-bench-toggle.open .t0-bench-toggle-arrow { transform: rotate(180deg); }
     /* 每日记录：对标指数（紧凑清单 + 双向条形，移动端优先；与统计卡区分：无卡片底、分组色条） */
     .t0-bench-wrap { margin: 10px 0 2px; }
     .t0-bench-block { margin-bottom: 4px; }
@@ -893,9 +898,13 @@
           <span class="section-subtitle" id="t0DailyMeta"></span>
         </div>
         <div class="metrics-grid" id="t0DailyCards"></div>
-        <!-- 同期对标指数（5 类差异化：标的自身 / A股风格 / 无风险对照 / 港股 / 美股 / 黄金） -->
-        <div class="t0-daily-subtitle" id="t0BenchTitle">同期涨跌对标</div>
-        <div class="t0-bench-wrap" id="t0BenchCards"></div>
+        <!-- 同期对标指数（5 类差异化：标的自身 / A股风格 / 无风险对照 / 港股 / 美股 / 黄金）
+             12 个标的长清单默认收起，点击标题展开，避免占满手机屏 -->
+        <button type="button" class="t0-bench-toggle" id="t0BenchToggle" onclick="toggleT0Bench()" aria-expanded="false" aria-controls="t0BenchCards">
+          <span id="t0BenchTitle">同期涨跌对标</span>
+          <span class="t0-bench-toggle-arrow" aria-hidden="true">▾</span>
+        </button>
+        <div class="t0-bench-wrap" id="t0BenchCards" hidden></div>
         <div class="table-wrap t0-daily-wrap">
           <table class="t0-daily-table">
             <thead>
@@ -1270,6 +1279,7 @@
     let t0Data = null;
     let t0Backtest = null;        // 做T回测数据（独立文件，点击做T页签时按需加载）
     let t0Bench = null;           // 基准指数（上证指数/创业板指）日涨跌，每日记录展示用
+    let t0BenchExpanded = false;  // 同期对标清单是否展开（默认收起，避免 12 个标的占满屏）
     let t0BacktestPromise = null;
     let cybT0Data = null;         // 创业板做T数据（frontend_data.json 的 t0_cyb 字段）
     let cybT0Backtest = null;     // 创业板做T回测（t0_backtest_cyb.json 按需加载）
@@ -3078,8 +3088,25 @@
           benchEl.innerHTML = '';
           if (benchTitleEl) benchTitleEl.textContent = '同期涨跌对标';
         }
+        // 折叠状态同步：无数据时隐藏整个模块，有数据时按当前展开状态显示（默认收起）
+        const hasBench = !!(items && items.length);
+        const benchToggleEl = document.getElementById('t0BenchToggle');
+        if (benchToggleEl) benchToggleEl.style.display = hasBench ? '' : 'none';
+        benchEl.hidden = !hasBench || !t0BenchExpanded;
       }
       body.innerHTML = buildT0RowsHTML([...records].reverse(), true, true, undefined, true); // 最新在上（含买卖时间）+ 实际卖出价录入列 + 当日基准指数
+    }
+
+    // 同期对标清单：点击标题展开/收起（默认收起）
+    function toggleT0Bench() {
+      t0BenchExpanded = !t0BenchExpanded;
+      const el = document.getElementById('t0BenchCards');
+      const btn = document.getElementById('t0BenchToggle');
+      if (el) el.hidden = !t0BenchExpanded;
+      if (btn) {
+        btn.classList.toggle('open', t0BenchExpanded);
+        btn.setAttribute('aria-expanded', t0BenchExpanded ? 'true' : 'false');
+      }
     }
 
     // 历史业绩明细按状态筛选（all=全部；buyonly 用前缀匹配以兼容 仅买14:50/13:50/14:00 等）

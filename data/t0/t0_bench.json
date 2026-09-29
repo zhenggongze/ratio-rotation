@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-15 17:22:41",
+  "updated_at": "2026-09-28 16:49:16",
   "source": "tencent",
   "indices": [
     {
@@ -101,7 +101,7 @@
   ],
   "period": {
     "start": "2026-08-06",
-    "end": "2026-09-15",
+    "end": "2026-09-28",
     "base_date": "2026-08-05",
     "items": [
       {
@@ -110,9 +110,9 @@
         "group": "标的自身",
         "gkey": "self",
         "overnight": false,
-        "pct": 1.58,
-        "close": 5534.25,
-        "asof": "2026-09-15"
+        "pct": -0.15,
+        "close": 5439.6,
+        "asof": "2026-09-28"
       },
       {
         "key": "szhl",
@@ -120,9 +120,9 @@
         "group": "标的自身",
         "gkey": "self",
         "overnight": false,
-        "pct": -7.24,
-        "close": 7940.02,
-        "asof": "2026-09-15"
+        "pct": -11.36,
+        "close": 7587.86,
+        "asof": "2026-09-28"
       },
       {
         "key": "sh",
@@ -130,9 +130,9 @@
         "group": "A股风格",
         "gkey": "a",
         "overnight": false,
-        "pct": -0.36,
-        "close": 3864.28,
-        "asof": "2026-09-15"
+        "pct": -1.41,
+        "close": 3823.62,
+        "asof": "2026-09-28"
       },
       {
         "key": "hs300",
@@ -140,9 +140,9 @@
         "group": "A股风格",
         "gkey": "a",
         "overnight": false,
-        "pct": -4.47,
-        "close": 4450.04,
-        "asof": "2026-09-15"
+        "pct": -6.81,
+        "close": 4340.76,
+        "asof": "2026-09-28"
       },
       {
         "key": "cyb",
@@ -150,9 +150,9 @@
         "group": "A股风格",
         "gkey": "a",
         "overnight": false,
-        "pct": -8.12,
-        "close": 3247.92,
-        "asof": "2026-09-15"
+        "pct": -11.18,
+        "close": 3139.82,
+        "asof": "2026-09-28"
       },
       {
         "key": "kc50",
@@ -160,9 +160,9 @@
         "group": "A股风格",
         "gkey": "a",
         "overnight": false,
-        "pct": -8.37,
-        "close": 1551.96,
-        "asof": "2026-09-15"
+        "pct": -8.13,
+        "close": 1555.98,
+        "asof": "2026-09-28"
       },
       {
         "key": "bond",
@@ -170,9 +170,9 @@
         "group": "无风险对照",
         "gkey": "bond",
         "overnight": false,
-        "pct": 0.38,
-        "close": 230.48,
-        "asof": "2026-09-15"
+        "pct": 0.59,
+        "close": 230.95,
+        "asof": "2026-09-28"
       },
       {
         "key": "hsi",
@@ -180,9 +180,9 @@
         "group": "港股",
         "gkey": "hk",
         "overnight": false,
-        "pct": -4.82,
-        "close": 24667.24,
-        "asof": "2026-09-15"
+        "pct": -4.91,
+        "close": 24642.51,
+        "asof": "2026-09-28"
       },
       {
         "key": "hstech",
@@ -190,9 +190,9 @@
         "group": "港股",
         "gkey": "hk",
         "overnight": false,
-        "pct": -13.01,
-        "close": 4291.34,
-        "asof": "2026-09-15"
+        "pct": -12.91,
+        "close": 4296,
+        "asof": "2026-09-28"
       },
       {
         "key": "spx",
@@ -200,9 +200,9 @@
         "group": "美股",
         "gkey": "us",
         "overnight": true,
-        "pct": -1.34,
-        "close": 7619.98,
-        "asof": "2026-09-14"
+        "pct": 0.26,
+        "close": 7743.41,
+        "asof": "2026-09-25"
       },
       {
         "key": "ndx",
@@ -210,9 +210,9 @@
         "group": "美股",
         "gkey": "us",
         "overnight": true,
-        "pct": -1.22,
-        "close": 29127.16,
-        "asof": "2026-09-14"
+        "pct": 3.8,
+        "close": 30608.13,
+        "asof": "2026-09-25"
       },
       {
         "key": "gold",
@@ -220,14 +220,14 @@
         "group": "黄金",
         "gkey": "gold",
         "overnight": false,
-        "pct": 2.2,
-        "close": 8.83,
-        "asof": "2026-09-15"
+        "pct": -0.81,
+        "close": 8.57,
+        "asof": "2026-09-28"
       }
     ]
   },
   "records": {
-    "2026-03-25": {
+    "2026-04-03": {
       "zzhl_pct": null,
       "szhl_pct": null,
       "sh_pct": null,
@@ -235,139 +235,27 @@
       "cyb_pct": null,
       "kc50_pct": null,
       "bond_pct": null,
-      "hsi_pct": 1.09,
-      "hstech_pct": 1.91,
-      "spx_pct": 0.54,
-      "spx_asof": "2026-03-25",
-      "ndx_pct": 0.67,
-      "ndx_asof": "2026-03-25",
-      "gold_pct": 3.68
-    },
-    "2026-03-26": {
-      "zzhl_pct": 0.04,
-      "szhl_pct": -1.27,
-      "sh_pct": -1.09,
-      "hs300_pct": -1.32,
-      "cyb_pct": -1.34,
-      "kc50_pct": -2.02,
-      "bond_pct": 0.05,
-      "hsi_pct": -1.89,
-      "hstech_pct": -3.28,
-      "spx_pct": -1.74,
-      "spx_asof": "2026-03-26",
-      "ndx_pct": -2.38,
-      "ndx_asof": "2026-03-26",
-      "gold_pct": -1.98
-    },
-    "2026-03-27": {
-      "zzhl_pct": 0.23,
-      "szhl_pct": 1.15,
-      "sh_pct": 0.63,
-      "hs300_pct": 0.56,
-      "cyb_pct": 0.71,
-      "kc50_pct": 0.93,
-      "bond_pct": -0.01,
-      "hsi_pct": 0.38,
-      "hstech_pct": 0.35,
-      "spx_pct": -1.67,
-      "spx_asof": "2026-03-27",
-      "ndx_pct": -1.93,
-      "ndx_asof": "2026-03-27",
-      "gold_pct": 0.47
-    },
-    "2026-03-30": {
-      "zzhl_pct": 0.92,
-      "szhl_pct": 0.5,
-      "sh_pct": 0.24,
-      "hs300_pct": -0.24,
-      "cyb_pct": -0.68,
-      "kc50_pct": -0.84,
-      "bond_pct": 0.05,
-      "hsi_pct": -0.81,
-      "hstech_pct": -1.84,
-      "spx_pct": -0.39,
-      "spx_asof": "2026-03-30",
-      "ndx_pct": -0.78,
-      "ndx_asof": "2026-03-30",
-      "gold_pct": 1.71
-    },
-    "2026-03-31": {
-      "zzhl_pct": -1.17,
-      "szhl_pct": 0.24,
-      "sh_pct": -0.8,
-      "hs300_pct": -0.93,
-      "cyb_pct": -2.7,
-      "kc50_pct": -2.59,
-      "bond_pct": 0.03,
-      "hsi_pct": 0.15,
-      "hstech_pct": -0.86,
-      "spx_pct": 2.91,
-      "spx_asof": "2026-03-31",
-      "ndx_pct": 3.43,
-      "ndx_asof": "2026-03-31",
-      "gold_pct": 0.45
-    },
-    "2026-04-01": {
-      "zzhl_pct": 0.06,
-      "szhl_pct": 1.55,
-      "sh_pct": 1.46,
-      "hs300_pct": 1.71,
-      "cyb_pct": 1.96,
-      "kc50_pct": 3.33,
-      "bond_pct": -0.02,
-      "hsi_pct": 2.04,
-      "hstech_pct": 2.29,
-      "spx_pct": 0.72,
-      "spx_asof": "2026-04-01",
-      "ndx_pct": 1.18,
-      "ndx_asof": "2026-04-01",
-      "gold_pct": 3.35
-    },
-    "2026-04-02": {
-      "zzhl_pct": 0.23,
-      "szhl_pct": -0.3,
-      "sh_pct": -0.74,
-      "hs300_pct": -1.04,
-      "cyb_pct": -2.31,
-      "kc50_pct": -2.77,
-      "bond_pct": -0.01,
-      "hsi_pct": -0.7,
-      "hstech_pct": -1.63,
-      "spx_pct": 0.11,
-      "spx_asof": "2026-04-02",
-      "ndx_pct": 0.11,
-      "ndx_asof": "2026-04-02",
-      "gold_pct": -2.85
-    },
-    "2026-04-03": {
-      "zzhl_pct": -1.66,
-      "szhl_pct": -1.3,
-      "sh_pct": -1,
-      "hs300_pct": -0.85,
-      "cyb_pct": -0.73,
-      "kc50_pct": -0.47,
-      "bond_pct": 0.01,
       "hsi_pct": null,
       "hstech_pct": null,
-      "spx_pct": 0.11,
-      "spx_asof": "2026-04-02",
-      "ndx_pct": 0.11,
-      "ndx_asof": "2026-04-02",
-      "gold_pct": 0.92
+      "spx_pct": null,
+      "spx_asof": null,
+      "ndx_pct": null,
+      "ndx_asof": null,
+      "gold_pct": null
     },
     "2026-04-07": {
       "zzhl_pct": 0.51,
-      "szhl_pct": -0.33,
+      "szhl_pct": null,
       "sh_pct": 0.26,
       "hs300_pct": 0,
       "cyb_pct": 0.36,
       "kc50_pct": 1.42,
-      "bond_pct": 0.04,
+      "bond_pct": null,
       "hsi_pct": null,
       "hstech_pct": null,
-      "spx_pct": 0.08,
+      "spx_pct": null,
       "spx_asof": "2026-04-07",
-      "ndx_pct": 0.04,
+      "ndx_pct": null,
       "ndx_asof": "2026-04-07",
       "gold_pct": 0.09
     },
@@ -2141,11 +2029,139 @@
       "bond_pct": 0.03,
       "hsi_pct": -1,
       "hstech_pct": -0.62,
-      "spx_pct": -0.48,
-      "spx_asof": "2026-09-14",
-      "ndx_pct": -0.82,
-      "ndx_asof": "2026-09-14",
-      "gold_pct": -0.51
+      "spx_pct": -0.45,
+      "spx_asof": "2026-09-15",
+      "ndx_pct": -0.65,
+      "ndx_asof": "2026-09-15",
+      "gold_pct": -0.52
+    },
+    "2026-09-16": {
+      "zzhl_pct": -0.55,
+      "szhl_pct": -1.24,
+      "sh_pct": 0.71,
+      "hs300_pct": 0.68,
+      "cyb_pct": 1.96,
+      "kc50_pct": 4.14,
+      "bond_pct": 0,
+      "hsi_pct": 0.19,
+      "hstech_pct": 0.79,
+      "spx_pct": -0.45,
+      "spx_asof": "2026-09-16",
+      "ndx_pct": 0.02,
+      "ndx_asof": "2026-09-16",
+      "gold_pct": 0.86
+    },
+    "2026-09-17": {
+      "zzhl_pct": -0.54,
+      "szhl_pct": 0.02,
+      "sh_pct": -0.41,
+      "hs300_pct": -0.45,
+      "cyb_pct": -0.4,
+      "kc50_pct": -0.61,
+      "bond_pct": 0.01,
+      "hsi_pct": -0.44,
+      "hstech_pct": -0.34,
+      "spx_pct": 1.14,
+      "spx_asof": "2026-09-17",
+      "ndx_pct": 1.73,
+      "ndx_asof": "2026-09-17",
+      "gold_pct": -0.55
+    },
+    "2026-09-18": {
+      "zzhl_pct": -0.22,
+      "szhl_pct": 0.31,
+      "sh_pct": 0.94,
+      "hs300_pct": 1.06,
+      "cyb_pct": 2.25,
+      "kc50_pct": 2.88,
+      "bond_pct": 0.05,
+      "hsi_pct": 0.6,
+      "hstech_pct": 2.2,
+      "spx_pct": 0.17,
+      "spx_asof": "2026-09-18",
+      "ndx_pct": 0.67,
+      "ndx_asof": "2026-09-18",
+      "gold_pct": 1.73
+    },
+    "2026-09-21": {
+      "zzhl_pct": 1.2,
+      "szhl_pct": -0.51,
+      "sh_pct": 0.97,
+      "hs300_pct": 0.71,
+      "cyb_pct": 0.8,
+      "kc50_pct": 0.29,
+      "bond_pct": 0.04,
+      "hsi_pct": 1.18,
+      "hstech_pct": 0.4,
+      "spx_pct": 1.49,
+      "spx_asof": "2026-09-21",
+      "ndx_pct": 2.83,
+      "ndx_asof": "2026-09-21",
+      "gold_pct": -0.88
+    },
+    "2026-09-22": {
+      "zzhl_pct": 0.01,
+      "szhl_pct": 0.56,
+      "sh_pct": 0.06,
+      "hs300_pct": 0.11,
+      "cyb_pct": 0.01,
+      "kc50_pct": 0.46,
+      "bond_pct": 0.04,
+      "hsi_pct": 0.18,
+      "hstech_pct": 0.34,
+      "spx_pct": 0,
+      "spx_asof": "2026-09-22",
+      "ndx_pct": 0.82,
+      "ndx_asof": "2026-09-22",
+      "gold_pct": -0.8
+    },
+    "2026-09-23": {
+      "zzhl_pct": -0.79,
+      "szhl_pct": -0.85,
+      "sh_pct": -0.39,
+      "hs300_pct": -0.6,
+      "cyb_pct": -0.6,
+      "kc50_pct": -0.25,
+      "bond_pct": 0.02,
+      "hsi_pct": -1.01,
+      "hstech_pct": -1.33,
+      "spx_pct": -0.75,
+      "spx_asof": "2026-09-23",
+      "ndx_pct": -0.85,
+      "ndx_asof": "2026-09-23",
+      "gold_pct": 0.43
+    },
+    "2026-09-24": {
+      "zzhl_pct": -0.27,
+      "szhl_pct": -1.7,
+      "sh_pct": -1.22,
+      "hs300_pct": -1.73,
+      "cyb_pct": -2.68,
+      "kc50_pct": -2.35,
+      "bond_pct": 0.04,
+      "hsi_pct": -0.29,
+      "hstech_pct": -0.41,
+      "spx_pct": -0.02,
+      "spx_asof": "2026-09-24",
+      "ndx_pct": 0.03,
+      "ndx_asof": "2026-09-24",
+      "gold_pct": -1.23
+    },
+    "2026-09-28": {
+      "zzhl_pct": -0.54,
+      "szhl_pct": -1.09,
+      "sh_pct": -1.67,
+      "hs300_pct": -2.22,
+      "cyb_pct": -4.53,
+      "kc50_pct": -4.06,
+      "bond_pct": 0,
+      "hsi_pct": 0.54,
+      "hstech_pct": -0.37,
+      "spx_pct": 0.51,
+      "spx_asof": "2026-09-25",
+      "ndx_pct": 0.42,
+      "ndx_asof": "2026-09-25",
+      "gold_pct": -2.48
     }
   }
 }
