@@ -77,11 +77,11 @@ jobs:
           node t0_engine_cyb.cjs
           node workflow_logger.cjs --record "回测数据" "success"
 
-      - name: 计算今日做T信号并推送 PushDeer
+      - name: 计算今日做T信号（已暂停 PushDeer 推送）
         if: ${{ steps.check_td.outputs.is_td == 'true' && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
         run: |
           node workflow_logger.cjs --record "做T信号" "running"
-          output=$(node t0_signal.cjs --push 2>&1)
+          output=$(node t0_signal.cjs 2>&1)
           rc=$?
           echo "$output"
           if [ $rc -ne 0 ]; then
@@ -91,8 +91,9 @@ jobs:
           fi
           summary=$(echo "$output" | grep "SIGNAL_SUMMARY" | tail -1)
           node workflow_logger.cjs --record "做T信号" "success" "$summary"
-        env:
-          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+        # 【2026-10-13 暂停每日 PushDeer 推送】已移除 --push 与 PUSHDEER_KEY（env 整段删除，避免空 env 报错）。
+        # data/t0/t0_signal.json 仍照常生成，后续上传/部署/网页数据完全不受影响。
+        # 恢复推送：命令末尾加回 --push，并恢复 env: 下面的 PUSHDEER_KEY。
 
       - name: 计算创业板(159915)今日做T信号
         if: ${{ steps.check_td.outputs.is_td == 'true' && (inputs.force_refresh || steps.id_check.outcome != 'success') }}
@@ -136,7 +137,8 @@ jobs:
         run: |
           node workflow_logger.cjs --finish "${{ env.RUN_ID }}" --skip-non-trading "${{ steps.check_td.outputs.is_td }}"
         env:
-          PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
+          # 【2026-10-13 暂停每日 PushDeer 推送】无 key 时自动跳过推送，日志仍照常上传 OSS 归档。
+          # PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
