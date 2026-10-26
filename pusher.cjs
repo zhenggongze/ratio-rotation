@@ -70,11 +70,6 @@ function sendPush(text, desp, msgType) {
 // 带重试的推送（3次重试：10秒、60秒、300秒）
 // ============================================================
 async function sendPushWithRetry(text, desp, msgType, data) {
-  // 未配置 key（含「暂停推送」场景）→ 立即返回，不走 10/60/300 秒重试等待（否则白等 370 秒拖慢流水线）
-  if (!config.pushdeer.key) {
-    log('WARN', 'PUSHDEER_KEY 未配置，跳过推送（不重试）');
-    return { success: false, error: 'PUSHDEER_KEY 未配置' };
-  }
   const maxRetries = config.pushdeer.maxRetries;
   const delays = config.pushdeer.retryDelays;
 
